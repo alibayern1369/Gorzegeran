@@ -14,20 +14,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrophyHero } from "@/components/league/trophy-hero";
 import { MatchCard } from "@/components/league/score-display";
-import { StandingsTable, RankingRulesHint } from "@/components/league/standings-table";
+import {
+  StandingsTable,
+  RankingRulesHint,
+} from "@/components/league/standings-table";
 import { ProgressBar } from "@/components/league/progress-bar";
 import { AnimatedCounter } from "@/components/league/animated-counter";
 import { PlayerAvatar } from "@/components/league/player-avatar";
 import { RankBadge } from "@/components/league/badges";
 import { loadLeagueData } from "@/lib/queries";
 import { computeStandings, hasOfficialChampion } from "@/lib/engine/ranking";
-import {
-  computeLeagueSummary,
-  computeTowerLeaders,
-} from "@/lib/engine/stats";
+import { computeLeagueSummary, computeTowerLeaders } from "@/lib/engine/stats";
 import {
   CHAMPION_TITLE,
-  PLAYER_BY_ID,
   TOWER_LEADER_TITLE,
   TOURNAMENT_NAME,
   TOURNAMENT_SUBTITLE,
@@ -44,13 +43,30 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const data = await loadLeagueData();
+  if (!data.players.length)
+    return (
+      <div className="mx-auto max-w-4xl p-6">
+        <Card>
+          هنوز بازیکنی در لیگ نیست. مدیر می‌تواند از بخش مدیریت بازیکنان، لیگ را
+          آماده کند.
+        </Card>
+      </div>
+    );
+  const PLAYER_BY_ID = data.playerById;
   const nowIso = new Date().toISOString();
 
   const standings = computeStandings(data.enginePlayers, data.engineMatches, {
-    isTournamentComplete: false,
+    isTournamentComplete:
+      data.engineMatches.length > 0 &&
+      data.engineMatches.every(
+        (m) => m.status === "completed" || m.status === "cancelled",
+      ),
   });
   const summary = computeLeagueSummary(data.engineMatches, nowIso);
-  const towerLeaders = computeTowerLeaders(data.enginePlayers, data.engineMatches);
+  const towerLeaders = computeTowerLeaders(
+    data.enginePlayers,
+    data.engineMatches,
+  );
   const leader = standings.rows[0]!;
   const towerLeader = towerLeaders[0]!;
   const championDecided = hasOfficialChampion(standings);
@@ -81,9 +97,12 @@ export default async function HomePage() {
                 {TOURNAMENT_SUBTITLE}
               </p>
               <p className="mt-4 max-w-lg text-sm leading-7 text-[var(--text-muted)]">
-                پنج پهلوان، ده شب نبرد، چهل مسابقهٔ سرنوشت‌ساز. هر برد{" "}
-                <strong className="text-victory">۲ امتیاز</strong>، هر برج یک گام نزدیک‌تر
-                به تاج <strong className="text-gradient-gold">{CHAMPION_TITLE}</strong>.
+                {toPersianDigits(data.players.length)} بازیکن و{" "}
+                {toPersianDigits(data.matches.length)} مسابقهٔ سرنوشت‌ساز. هر
+                برد <strong className="text-victory">۲ امتیاز</strong>، هر برج
+                یک گام نزدیک‌تر به تاج{" "}
+                <strong className="text-gradient-gold">{CHAMPION_TITLE}</strong>
+                .
               </p>
 
               <div className="mt-6 max-w-md">
@@ -98,8 +117,10 @@ export default async function HomePage() {
                     {toPersianDigits(summary.completedMatches)}
                   </span>{" "}
                   مسابقه از{" "}
-                  <span className="num">{toPersianDigits(summary.totalMatches)}</span> مسابقه
-                  برگزار شده
+                  <span className="num">
+                    {toPersianDigits(summary.totalMatches)}
+                  </span>{" "}
+                  مسابقه برگزار شده
                 </p>
               </div>
 
@@ -122,11 +143,18 @@ export default async function HomePage() {
             <div className="relative mx-auto w-full max-w-xs">
               <TrophyHero className="clay-float mx-auto w-full drop-shadow-[0_20px_45px_rgba(245,185,66,0.35)]" />
               <div className="clay-sm absolute bottom-2 start-0 p-3">
-                <p className="text-[10px] text-[var(--text-faint)]">صدرنشین اکنون</p>
+                <p className="text-[10px] text-[var(--text-faint)]">
+                  صدرنشین اکنون
+                </p>
                 <div className="mt-1 flex items-center gap-2">
-                  <PlayerAvatar player={PLAYER_BY_ID.get(leader.player.id) as PlayerSeed} size={32} />
+                  <PlayerAvatar
+                    player={PLAYER_BY_ID.get(leader.player.id) as PlayerSeed}
+                    size={32}
+                  />
                   <div>
-                    <p className="text-xs font-extrabold">{leader.player.name}</p>
+                    <p className="text-xs font-extrabold">
+                      {leader.player.name}
+                    </p>
                     <p className="num text-[10px] text-gold">
                       {toPersianDigits(leader.points)} امتیاز
                     </p>
@@ -179,12 +207,28 @@ export default async function HomePage() {
                   مسابقهٔ بعدی
                 </Badge>
                 <p className="mt-2 text-sm font-bold text-[var(--text-muted)]">
-                  {formatJalaliDateWithWeekday(summary.nextMatch.scheduledAt)} — ساعت{" "}
-                  <span className="num">{formatTime(summary.nextMatch.scheduledAt)}</span>
+                  {formatJalaliDateWithWeekday(summary.nextMatch.scheduledAt)} —
+                  ساعت{" "}
+                  <span className="num">
+                    {formatTime(summary.nextMatch.scheduledAt)}
+                  </span>
                 </p>
                 <p className="mt-1 text-lg font-extrabold">
-                  {(PLAYER_BY_ID.get(summary.nextMatch.playerAId) as PlayerSeed).name} در برابر{" "}
-                  {(PLAYER_BY_ID.get(summary.nextMatch.playerBId) as PlayerSeed).name}
+                  {
+                    (
+                      PLAYER_BY_ID.get(
+                        summary.nextMatch.playerAId,
+                      ) as PlayerSeed
+                    ).name
+                  }{" "}
+                  در برابر{" "}
+                  {
+                    (
+                      PLAYER_BY_ID.get(
+                        summary.nextMatch.playerBId,
+                      ) as PlayerSeed
+                    ).name
+                  }
                 </p>
               </div>
               <Button asChild variant="primary">
@@ -202,7 +246,11 @@ export default async function HomePage() {
       <section className="mt-10" aria-label="جدول رده‌بندی">
         <SectionHeader
           title="جدول رده‌بندی لیگ"
-          subtitle={standings.isComplete ? "رتبه‌بندی نهایی" : "رتبه‌بندی موقت تا این لحظه"}
+          subtitle={
+            standings.isComplete
+              ? "رتبه‌بندی نهایی"
+              : "رتبه‌بندی موقت تا این لحظه"
+          }
           href="/standings"
           linkLabel="جدول کامل"
         />
@@ -213,7 +261,11 @@ export default async function HomePage() {
       {/* ───────── نتایج اخیر و مسابقات پیش رو ───────── */}
       <section className="mt-10 grid gap-6 lg:grid-cols-2">
         <div>
-          <SectionHeader title="آخرین نتایج" href="/schedule" linkLabel="همه نتایج" />
+          <SectionHeader
+            title="آخرین نتایج"
+            href="/schedule"
+            linkLabel="همه نتایج"
+          />
           <div className="flex flex-col gap-3">
             {summary.latestResults.length > 0 ? (
               summary.latestResults.map((m) => (
@@ -225,7 +277,11 @@ export default async function HomePage() {
           </div>
         </div>
         <div>
-          <SectionHeader title="مسابقات پیش رو" href="/schedule" linkLabel="برنامه کامل" />
+          <SectionHeader
+            title="مسابقات پیش رو"
+            href="/schedule"
+            linkLabel="برنامه کامل"
+          />
           <div className="flex flex-col gap-3">
             {upcomingSlice(data.engineMatches, nowIso).length > 0 ? (
               upcomingSlice(data.engineMatches, nowIso).map((m) => (
@@ -258,12 +314,19 @@ export default async function HomePage() {
                 <RankBadge rank={row.rank} size="sm" />
                 <PlayerAvatar player={player} size={42} />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold">{player.name}</p>
+                  <p className="truncate text-sm font-extrabold">
+                    {player.name}
+                  </p>
                   <p className="num text-xs text-gold">
                     {toPersianDigits(row.towersDestroyed)} برج تخریب‌شده
                   </p>
                   <p className="num text-[10px] text-[var(--text-faint)]">
-                    میانگین {row.avgPerMatch.toFixed(2).replace(".", "٫").replace(/\d/g, (d) => toPersianDigits(Number(d)))} در هر بازی
+                    میانگین{" "}
+                    {row.avgPerMatch
+                      .toFixed(2)
+                      .replace(".", "٫")
+                      .replace(/\d/g, (d) => toPersianDigits(Number(d)))}{" "}
+                    در هر بازی
                   </p>
                 </div>
               </Link>
@@ -287,17 +350,24 @@ export default async function HomePage() {
           <CardContent>
             {championDecided ? (
               <p className="text-sm leading-7">
-                <strong className="text-gradient-gold">{leader.player.name}</strong> با{" "}
-                <span className="num">{toPersianDigits(leader.points)}</span> امتیاز،{" "}
-                {CHAMPION_TITLE} فصل یکم است!
+                <strong className="text-gradient-gold">
+                  {leader.player.name}
+                </strong>{" "}
+                با <span className="num">{toPersianDigits(leader.points)}</span>{" "}
+                امتیاز، {CHAMPION_TITLE} فصل یکم است!
               </p>
             ) : (
               <p className="text-sm leading-7 text-[var(--text-muted)]">
                 در حال حاضر{" "}
-                <strong className="text-[var(--text)]">{leader.player.name}</strong> با{" "}
-                <span className="num text-gold">{toPersianDigits(leader.points)}</span> امتیاز
-                صدرنشین است، اما تا پایان همهٔ مسابقات و رفع هرگونه تساوی، قهرمان رسمی اعلام
-                نمی‌شود.
+                <strong className="text-[var(--text)]">
+                  {leader.player.name}
+                </strong>{" "}
+                با{" "}
+                <span className="num text-gold">
+                  {toPersianDigits(leader.points)}
+                </span>{" "}
+                امتیاز صدرنشین است، اما تا پایان همهٔ مسابقات و رفع هرگونه
+                تساوی، قهرمان رسمی اعلام نمی‌شود.
               </p>
             )}
           </CardContent>
@@ -314,7 +384,8 @@ function upcomingSlice(
   return matches
     .filter(
       (m) =>
-        (m.status === "scheduled" || m.status === "postponed") && m.scheduledAt >= nowIso,
+        (m.status === "scheduled" || m.status === "postponed") &&
+        m.scheduledAt >= nowIso,
     )
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.id - b.id)
     .slice(0, 3);
@@ -348,7 +419,9 @@ function StatCard({
           text
         )}
       </p>
-      {suffix && <p className="text-[11px] text-[var(--text-faint)]">{suffix}</p>}
+      {suffix && (
+        <p className="text-[11px] text-[var(--text-faint)]">{suffix}</p>
+      )}
     </div>
   );
 }
@@ -368,7 +441,9 @@ function SectionHeader({
     <div className="mb-4 flex items-end justify-between gap-3">
       <div>
         <h2 className="text-xl font-extrabold sm:text-2xl">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs text-[var(--text-faint)]">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-0.5 text-xs text-[var(--text-faint)]">{subtitle}</p>
+        )}
       </div>
       {href && linkLabel && (
         <Link
@@ -385,7 +460,9 @@ function SectionHeader({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="clay-sm p-8 text-center text-sm text-[var(--text-faint)]">{text}</div>
+    <div className="clay-sm p-8 text-center text-sm text-[var(--text-faint)]">
+      {text}
+    </div>
   );
 }
 

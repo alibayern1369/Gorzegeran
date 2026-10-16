@@ -65,8 +65,12 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("admin"),
   isActive: boolean("is_active").notNull().default(true),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 /** تورنمنت‌ها / فصل‌ها */
@@ -81,8 +85,12 @@ export const tournaments = pgTable("tournaments", {
   startDate: varchar("start_date", { length: 10 }).notNull(),
   nightIntervalDays: integer("night_interval_days").notNull().default(2),
   championPlayerId: integer("champion_player_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 /** بازیکنان */
@@ -91,10 +99,19 @@ export const players = pgTable("players", {
   slug: varchar("slug", { length: 80 }).notNull().unique(),
   name: varchar("name", { length: 120 }).notNull(),
   title: varchar("title", { length: 160 }),
-  accentColor: varchar("accent_color", { length: 16 }).notNull().default("#2563EB"),
-  avatarStyle: varchar("avatar_style", { length: 32 }).notNull().default("knight"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  accentColor: varchar("accent_color", { length: 16 })
+    .notNull()
+    .default("#2563EB"),
+  avatarStyle: varchar("avatar_style", { length: 32 })
+    .notNull()
+    .default("knight"),
+  photoUrl: text("photo_url"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 /** حضور بازیکنان در تورنمنت */
@@ -108,7 +125,9 @@ export const tournamentPlayers = pgTable(
     playerId: integer("player_id")
       .notNull()
       .references(() => players.id, { onDelete: "cascade" }),
-    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     uniqueIndex("tournament_players_unique").on(t.tournamentId, t.playerId),
@@ -136,7 +155,9 @@ export const encounters = pgTable(
     playerBId: integer("player_b_id")
       .notNull()
       .references(() => players.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     uniqueIndex("encounters_pair_unique").on(
@@ -145,10 +166,7 @@ export const encounters = pgTable(
       t.playerBId,
     ),
     index("encounters_tournament_idx").on(t.tournamentId),
-    check(
-      "encounters_players_distinct",
-      sql`${t.playerAId} <> ${t.playerBId}`,
-    ),
+    check("encounters_players_distinct", sql`${t.playerAId} <> ${t.playerBId}`),
     check("encounters_players_ordered", sql`${t.playerAId} < ${t.playerBId}`),
   ],
 );
@@ -164,7 +182,8 @@ export const matches = pgTable(
     encounterId: integer("encounter_id")
       .notNull()
       .references(() => encounters.id, { onDelete: "cascade" }),
-    matchType: matchTypeEnum("match_type").notNull(),
+    matchType: text("match_type").notNull(),
+    gameIndex: integer("game_index").notNull().default(0),
     playerAId: integer("player_a_id")
       .notNull()
       .references(() => players.id),
@@ -179,12 +198,20 @@ export const matches = pgTable(
     towersB: integer("towers_b"),
     winnerId: integer("winner_id").references(() => players.id),
     resultRecordedAt: timestamp("result_recorded_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
-    uniqueIndex("matches_encounter_type_unique").on(t.encounterId, t.matchType),
-    uniqueIndex("matches_night_slot_unique").on(t.tournamentId, t.nightIndex, t.slotIndex),
+    uniqueIndex("matches_encounter_game_unique").on(t.encounterId, t.gameIndex),
+    uniqueIndex("matches_night_slot_unique").on(
+      t.tournamentId,
+      t.nightIndex,
+      t.slotIndex,
+    ),
     index("matches_tournament_idx").on(t.tournamentId),
     index("matches_status_idx").on(t.status),
     index("matches_scheduled_idx").on(t.scheduledAt),
@@ -233,8 +260,12 @@ export const matchResults = pgTable(
       .notNull()
       .references(() => players.id),
     recordedBy: integer("recorded_by").references(() => users.id),
-    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("match_results_winner_idx").on(t.winnerId),
@@ -262,7 +293,9 @@ export const auditLogs = pgTable(
     previousValue: jsonb("previous_value"),
     newValue: jsonb("new_value"),
     note: text("note"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("audit_logs_entity_idx").on(t.entityType, t.entityId),
@@ -282,6 +315,27 @@ export const tournamentSettings = pgTable("tournament_settings", {
   matchesPerEncounter: integer("matches_per_encounter").notNull().default(4),
   maxTowersPerMatch: integer("max_towers_per_match").notNull().default(3),
   allowDraws: boolean("allow_draws").notNull().default(false),
+  matchTypes: jsonb("match_types")
+    .$type<string[]>()
+    .notNull()
+    .default([
+      "custom_deck",
+      "draft_type_1",
+      "draft_type_2",
+      "infinite_elixir",
+    ]),
+  startTime: varchar("start_time", { length: 5 }).notNull().default("00:00"),
+  slotMinutes: integer("slot_minutes").notNull().default(15),
+});
+
+/** Small, normalized profile and branding images, persisted across Vercel deployments. */
+export const mediaAssets = pgTable("media_assets", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  content: text("content").notNull(),
+  mimeType: varchar("mime_type", { length: 40 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 /** مسابقات تکلیفی (تعیین رتبه در صورت تساوی کامل) */
@@ -304,8 +358,12 @@ export const tiebreakMatches = pgTable(
     towersB: integer("towers_b"),
     winnerId: integer("winner_id").references(() => players.id),
     note: text("note"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("tiebreak_tournament_idx").on(t.tournamentId),
@@ -329,7 +387,9 @@ export const tiebreakMatches = pgTable(
 export const meta = pgTable("meta", {
   key: varchar("key", { length: 80 }).primaryKey(),
   value: jsonb("value").notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // ────────────────────────────── انواع ──────────────────────────────

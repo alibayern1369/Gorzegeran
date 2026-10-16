@@ -3,6 +3,7 @@
  */
 
 export interface PlayerSeed {
+  photoUrl?: string | null;
   id: number;
   slug: string;
   name: string;
@@ -87,6 +88,7 @@ export const NAV_LINKS = [
 ] as const;
 
 export const ADMIN_NAV_LINKS = [
+  { href: "/admin/settings", label: "تنظیمات لیگ و برنامه" },
   { href: "/admin", label: "داشبورد" },
   { href: "/admin/results", label: "ثبت نتایج" },
   { href: "/admin/matches", label: "مدیریت مسابقات" },

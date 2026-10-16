@@ -1,3 +1,4 @@
+import { matchTypeLabel } from "@/lib/engine/types";
 import {
   Clock,
   Radio,
@@ -18,7 +19,10 @@ import {
 
 const STATUS_CONFIG: Record<
   MatchStatus,
-  { variant: "default" | "victory" | "defeat" | "live" | "muted" | "elixir"; icon: React.ReactNode }
+  {
+    variant: "default" | "victory" | "defeat" | "live" | "muted" | "elixir";
+    icon: React.ReactNode;
+  }
 > = {
   scheduled: {
     variant: "default",
@@ -60,13 +64,22 @@ export function MatchTypeBadge({
   className?: string;
 }) {
   return (
-    <Badge variant="royal" className={className}>
-      {MATCH_TYPE_LABELS[type]}
+    <Badge
+      variant="royal"
+      className={`max-w-full whitespace-normal break-words text-start ${className ?? ""}`}
+    >
+      {matchTypeLabel(type)}
     </Badge>
   );
 }
 
-export function RankBadge({ rank, size = "md" }: { rank: number; size?: "sm" | "md" }) {
+export function RankBadge({
+  rank,
+  size = "md",
+}: {
+  rank: number;
+  size?: "sm" | "md";
+}) {
   const dim = size === "sm" ? "size-7 text-xs" : "size-9 text-sm";
   if (rank === 1) {
     return (

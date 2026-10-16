@@ -1,7 +1,15 @@
 "use client";
+import { matchTypeLabel } from "@/lib/engine/types";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { Check, Loader2, PencilLine, Trash2, AlertTriangle, Trophy } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  PencilLine,
+  Trash2,
+  AlertTriangle,
+  Trophy,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +21,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlayerAvatar } from "@/components/league/player-avatar";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import type { PlayerSeed } from "@/lib/constants";
+import { useLeaguePlayers } from "@/components/league-provider";
 import {
   submitResultAction,
   editResultAction,
@@ -94,8 +103,14 @@ function ScorePicker({
 }) {
   return (
     <div>
-      <p className="mb-2 text-center text-xs font-bold text-[var(--text-muted)]">{label}</p>
-      <div className="flex justify-center gap-2" role="radiogroup" aria-label={label}>
+      <p className="mb-2 text-center text-xs font-bold text-[var(--text-muted)]">
+        {label}
+      </p>
+      <div
+        className="flex justify-center gap-2"
+        role="radiogroup"
+        aria-label={label}
+      >
         {SCORE_OPTIONS.map((n) => (
           <button
             key={n}
@@ -104,9 +119,7 @@ function ScorePicker({
             aria-checked={value === n}
             onClick={() => onChange(n)}
             className={`clay-btn flex size-12 items-center justify-center rounded-2xl text-lg font-black transition-all ${
-              value === n
-                ? "text-white"
-                : "text-[var(--text-muted)]"
+              value === n ? "text-white" : "text-[var(--text-muted)]"
             }`}
             style={
               value === n
@@ -135,8 +148,12 @@ export function ResultForm({
   mode?: "record" | "edit";
   compact?: boolean;
 }) {
+  const { playerById: PLAYER_BY_ID } = useLeaguePlayers();
   const action = mode === "record" ? submitResultAction : editResultAction;
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(
+    action,
+    {},
+  );
   const [towersA, setTowersA] = useState<number | null>(
     mode === "edit" ? match.towersA : null,
   );
@@ -186,7 +203,8 @@ export function ResultForm({
       </div>
 
       <p className="text-center text-xs text-[var(--text-faint)]">
-        {MATCH_TYPE_LABELS[match.matchType]} — مسابقهٔ شمارهٔ {toPersianDigits(match.id)}
+        {matchTypeLabel(match.matchType)} — مسابقهٔ شمارهٔ{" "}
+        {toPersianDigits(match.id)}
       </p>
 
       <ScorePicker
@@ -224,8 +242,8 @@ export function ResultForm({
           </p>
           <div className="grid grid-cols-2 gap-2 text-xs text-[var(--text-muted)]">
             <div className="rounded-lg bg-[var(--surface-2)] px-2.5 py-1.5">
-              امتیاز لیگ: <strong className="text-victory">۲</strong> برای برنده،{" "}
-              <strong className="text-defeat">۰</strong> برای بازنده
+              امتیاز لیگ: <strong className="text-victory">۲</strong> برای
+              برنده، <strong className="text-defeat">۰</strong> برای بازنده
             </div>
             <div className="rounded-lg bg-[var(--surface-2)] px-2.5 py-1.5">
               تفاضل برج:{" "}

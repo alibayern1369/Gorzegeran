@@ -3,17 +3,11 @@ import { requireAdminPage } from "@/lib/auth/guard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  MatchStatusBadge,
-  MatchTypeBadge,
-} from "@/components/league/badges";
+import { MatchStatusBadge, MatchTypeBadge } from "@/components/league/badges";
 import { PlayerAvatar } from "@/components/league/player-avatar";
-import {
-  ResultForm,
-  DeleteResultButton,
-} from "@/components/admin/result-form";
+import { ResultForm, DeleteResultButton } from "@/components/admin/result-form";
 import { loadLeagueData } from "@/lib/queries";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import { type PlayerSeed } from "@/lib/constants";
 import { formatJalaliDate, formatTime, toPersianDigits } from "@/lib/jalali";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +20,7 @@ export default async function AdminResultsPage({
   await requireAdminPage();
   const params = await searchParams;
   const data = await loadLeagueData();
+  const PLAYER_BY_ID = data.playerById;
 
   const pending = data.engineMatches
     .filter((m) => m.status !== "completed" && m.status !== "cancelled")
@@ -45,8 +40,8 @@ export default async function AdminResultsPage({
           مدیریت نتایج
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          ثبت، ویرایش و حذف نتایج مسابقات — تمام آمارهای لیگ به‌صورت خودکار بازمحاسبه
-          می‌شوند.
+          ثبت، ویرایش و حذف نتایج مسابقات — تمام آمارهای لیگ به‌صورت خودکار
+          بازمحاسبه می‌شوند.
         </p>
       </div>
 
@@ -75,7 +70,8 @@ export default async function AdminResultsPage({
                     <MatchTypeBadge type={m.matchType} />
                     <div className="flex items-center gap-1.5">
                       <span className="num text-[11px] text-[var(--text-faint)]">
-                        {formatJalaliDate(m.scheduledAt)} — {formatTime(m.scheduledAt)}
+                        {formatJalaliDate(m.scheduledAt)} —{" "}
+                        {formatTime(m.scheduledAt)}
                       </span>
                       <MatchStatusBadge status={m.status} />
                     </div>
@@ -123,7 +119,8 @@ export default async function AdminResultsPage({
                           {a.name}
                         </span>
                         <span className="num clay-pressed rounded-lg px-2.5 py-1 text-sm font-black">
-                          {toPersianDigits(m.towersA!)} — {toPersianDigits(m.towersB!)}
+                          {toPersianDigits(m.towersA!)} —{" "}
+                          {toPersianDigits(m.towersB!)}
                         </span>
                         <span
                           className={`text-sm font-bold ${!aWon ? "text-victory" : "text-[var(--text-muted)]"}`}

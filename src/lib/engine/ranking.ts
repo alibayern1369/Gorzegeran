@@ -96,11 +96,7 @@ interface PairH2H {
   pointsB: number;
 }
 
-function h2hBetween(
-  idA: number,
-  idB: number,
-  matches: EngineMatch[],
-): PairH2H {
+function h2hBetween(idA: number, idB: number, matches: EngineMatch[]): PairH2H {
   const res: PairH2H = {
     winsA: 0,
     winsB: 0,
@@ -117,8 +113,13 @@ function h2hBetween(
     const involves =
       (m.playerAId === idA && m.playerBId === idB) ||
       (m.playerAId === idB && m.playerBId === idA);
-    if (!involves) continue;
-    if (m.status === "completed" && m.towersA !== null && m.towersB !== null && m.winnerId !== null) {
+    if (!involves || m.status === "cancelled") continue;
+    if (
+      m.status === "completed" &&
+      m.towersA !== null &&
+      m.towersB !== null &&
+      m.winnerId !== null
+    ) {
       completed++;
       const aIsA = m.playerAId === idA;
       const tA = aIsA ? m.towersA! : m.towersB!;
@@ -136,7 +137,14 @@ function h2hBetween(
       }
     }
   }
-  res.complete = completed === MATCHES_PER_ENCOUNTER;
+  const expected =
+    matches.find(
+      (m) =>
+        ((m.playerAId === idA && m.playerBId === idB) ||
+          (m.playerAId === idB && m.playerBId === idA)) &&
+        m.encounterSize !== undefined,
+    )?.encounterSize ?? MATCHES_PER_ENCOUNTER;
+  res.complete = expected > 0 && completed === expected;
   return res;
 }
 
@@ -146,7 +154,10 @@ function miniLeagueStats(
   matches: EngineMatch[],
 ): Map<number, { points: number; diff: number; towers: number }> {
   const set = new Set(ids);
-  const out = new Map<number, { points: number; diff: number; towers: number }>();
+  const out = new Map<
+    number,
+    { points: number; diff: number; towers: number }
+  >();
   for (const id of ids) out.set(id, { points: 0, diff: 0, towers: 0 });
   for (const m of matches) {
     if (!isCountableMatch(m)) continue;
@@ -182,7 +193,11 @@ function resolveTiedGroup(
   isComplete: boolean,
 ): ResolvedEntry[] {
   if (ids.length <= 1) {
-    return ids.map((playerId) => ({ playerId, requiresTiebreak: false, sharedRank: false }));
+    return ids.map((playerId) => ({
+      playerId,
+      requiresTiebreak: false,
+      sharedRank: false,
+    }));
   }
 
   // — گروه دو نفره: مقایسهٔ رویارویی مستقیمِ تکمیل‌شده، سپس تفاضل و برج زدهٔ کلی —
@@ -208,9 +223,7 @@ function resolveTiedGroup(
 
     const byOverall = (): ResolvedEntry[] | null => {
       if (kA.diff !== kB.diff) {
-        return kA.diff > kB.diff
-          ? [ent(idA), ent(idB)]
-          : [ent(idB), ent(idA)];
+        return kA.diff > kB.diff ? [ent(idA), ent(idB)] : [ent(idB), ent(idA)];
       }
       if (kA.towers !== kB.towers) {
         return kA.towers > kB.towers
@@ -251,8 +264,16 @@ function resolveTiedGroup(
     clusters.get(k)!.push(id);
   }
   const orderedClusters = [...clusters.entries()].sort((x, y) => {
-    const [p1, d1, t1] = x[0].split("|").map(Number) as [number, number, number];
-    const [p2, d2, t2] = y[0].split("|").map(Number) as [number, number, number];
+    const [p1, d1, t1] = x[0].split("|").map(Number) as [
+      number,
+      number,
+      number,
+    ];
+    const [p2, d2, t2] = y[0].split("|").map(Number) as [
+      number,
+      number,
+      number,
+    ];
     if (p1 !== p2) return p2 - p1;
     if (d1 !== d2) return d2 - d1;
     return t2 - t1;
@@ -261,7 +282,11 @@ function resolveTiedGroup(
   const out: ResolvedEntry[] = [];
   for (const [, cluster] of orderedClusters) {
     if (cluster.length === 1) {
-      out.push({ playerId: cluster[0]!, requiresTiebreak: false, sharedRank: false });
+      out.push({
+        playerId: cluster[0]!,
+        requiresTiebreak: false,
+        sharedRank: false,
+      });
       continue;
     }
     if (cluster.length === 2) {
@@ -289,7 +314,11 @@ function resolveTiedGroup(
     for (const [, sub] of orderedSub) {
       const tie = sub.length > 1 && isComplete;
       for (const p of [...sub].sort((a, b) => a - b)) {
-        out.push({ playerId: p, requiresTiebreak: tie, sharedRank: sub.length > 1 });
+        out.push({
+          playerId: p,
+          requiresTiebreak: tie,
+          sharedRank: sub.length > 1,
+        });
       }
     }
   }
@@ -374,7 +403,11 @@ export function computeStandings(
   return { rows, isComplete, completedMatches, totalMatches };
 }
 
-function samePoints(a: number, b: number, stats: Map<number, BaseStats>): boolean {
+function samePoints(
+  a: number,
+  b: number,
+  stats: Map<number, BaseStats>,
+): boolean {
   return stats.get(a)!.points === stats.get(b)!.points;
 }
 

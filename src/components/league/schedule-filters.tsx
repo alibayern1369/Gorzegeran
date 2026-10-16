@@ -1,4 +1,5 @@
 "use client";
+import { matchTypeLabel } from "@/lib/engine/types";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ListFilter, CalendarRange, List } from "lucide-react";
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PLAYER_SEEDS } from "@/lib/constants";
+import { useLeaguePlayers } from "@/components/league-provider";
 import {
   MATCH_TYPE_LABELS,
   MATCH_TYPES,
@@ -20,10 +21,13 @@ import {
 export function ScheduleFilters({
   view,
   nights,
+  matchTypes,
 }: {
+  matchTypes: string[];
   view: "list" | "calendar";
   nights: Array<{ night: number; dateIso: string; dateLabel: string }>;
 }) {
+  const { players: PLAYER_SEEDS } = useLeaguePlayers();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -46,7 +50,10 @@ export function ScheduleFilters({
         value={searchParams.get("date") ?? "all"}
         onValueChange={(v) => setParam("date", v)}
       >
-        <SelectTrigger className="h-10 w-40 rounded-xl" aria-label="فیلتر تاریخ">
+        <SelectTrigger
+          className="h-10 w-full sm:w-40 rounded-xl"
+          aria-label="فیلتر تاریخ"
+        >
           <SelectValue placeholder="تاریخ" />
         </SelectTrigger>
         <SelectContent>
@@ -63,7 +70,10 @@ export function ScheduleFilters({
         value={searchParams.get("player") ?? "all"}
         onValueChange={(v) => setParam("player", v)}
       >
-        <SelectTrigger className="h-10 w-36 rounded-xl" aria-label="فیلتر بازیکن">
+        <SelectTrigger
+          className="h-10 w-full sm:w-36 rounded-xl"
+          aria-label="فیلتر بازیکن"
+        >
           <SelectValue placeholder="بازیکن" />
         </SelectTrigger>
         <SelectContent>
@@ -80,14 +90,17 @@ export function ScheduleFilters({
         value={searchParams.get("type") ?? "all"}
         onValueChange={(v) => setParam("type", v)}
       >
-        <SelectTrigger className="h-10 w-36 rounded-xl" aria-label="فیلتر نوع مسابقه">
+        <SelectTrigger
+          className="h-10 w-full sm:w-36 rounded-xl"
+          aria-label="فیلتر نوع مسابقه"
+        >
           <SelectValue placeholder="نوع مسابقه" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">همه انواع</SelectItem>
-          {MATCH_TYPES.map((t) => (
+          {matchTypes.map((t) => (
             <SelectItem key={t} value={t}>
-              {MATCH_TYPE_LABELS[t]}
+              {matchTypeLabel(t)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -97,22 +110,27 @@ export function ScheduleFilters({
         value={searchParams.get("status") ?? "all"}
         onValueChange={(v) => setParam("status", v)}
       >
-        <SelectTrigger className="h-10 w-36 rounded-xl" aria-label="فیلتر وضعیت">
+        <SelectTrigger
+          className="h-10 w-full sm:w-36 rounded-xl"
+          aria-label="فیلتر وضعیت"
+        >
           <SelectValue placeholder="وضعیت" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-          {(Object.keys(MATCH_STATUS_LABELS) as Array<keyof typeof MATCH_STATUS_LABELS>).map(
-            (s) => (
-              <SelectItem key={s} value={s}>
-                {MATCH_STATUS_LABELS[s]}
-              </SelectItem>
-            ),
-          )}
+          {(
+            Object.keys(MATCH_STATUS_LABELS) as Array<
+              keyof typeof MATCH_STATUS_LABELS
+            >
+          ).map((s) => (
+            <SelectItem key={s} value={s}>
+              {MATCH_STATUS_LABELS[s]}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
-      <div className="ms-auto flex items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2 sm:ms-auto sm:w-auto">
         <Button
           variant={view === "list" ? "primary" : "outline"}
           size="sm"

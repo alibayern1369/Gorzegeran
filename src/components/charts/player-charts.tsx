@@ -1,4 +1,5 @@
 "use client";
+import { matchTypeLabel } from "@/lib/engine/types";
 
 import {
   ResponsiveContainer,
@@ -50,11 +51,18 @@ export function PointsTimelineChart({ data }: { data: TimelinePoint[] }) {
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis
           dataKey="at"
-          tickFormatter={(v: string) => formatJalaliDate(v).split(" ").slice(0, 2).join(" ")}
+          tickFormatter={(v: string) =>
+            formatJalaliDate(v).split(" ").slice(0, 2).join(" ")
+          }
           stroke="var(--text-faint)"
           tick={{ fontSize: 10 }}
         />
-        <YAxis tickFormatter={faTick} stroke="var(--text-faint)" tick={{ fontSize: 10 }} width={28} />
+        <YAxis
+          tickFormatter={faTick}
+          stroke="var(--text-faint)"
+          tick={{ fontSize: 10 }}
+          width={28}
+        />
         <Tooltip
           contentStyle={{
             background: "var(--surface)",
@@ -64,7 +72,10 @@ export function PointsTimelineChart({ data }: { data: TimelinePoint[] }) {
             fontFamily: "var(--font-vazirmatn), Tahoma",
             color: "var(--text)",
           }}
-          formatter={(value, name) => [toPersianDigits(Number(value)), String(name)]}
+          formatter={(value, name) => [
+            toPersianDigits(Number(value)),
+            String(name),
+          ]}
           labelFormatter={(label) => formatJalaliDate(String(label))}
         />
         <Line
@@ -89,11 +100,18 @@ export function TowersTimelineChart({ data }: { data: TimelinePoint[] }) {
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis
           dataKey="at"
-          tickFormatter={(v: string) => formatJalaliDate(v).split(" ").slice(0, 2).join(" ")}
+          tickFormatter={(v: string) =>
+            formatJalaliDate(v).split(" ").slice(0, 2).join(" ")
+          }
           stroke="var(--text-faint)"
           tick={{ fontSize: 10 }}
         />
-        <YAxis tickFormatter={faTick} stroke="var(--text-faint)" tick={{ fontSize: 10 }} width={28} />
+        <YAxis
+          tickFormatter={faTick}
+          stroke="var(--text-faint)"
+          tick={{ fontSize: 10 }}
+          width={28}
+        />
         <Tooltip
           contentStyle={{
             background: "var(--surface)",
@@ -103,7 +121,10 @@ export function TowersTimelineChart({ data }: { data: TimelinePoint[] }) {
             fontFamily: "var(--font-vazirmatn), Tahoma",
             color: "var(--text)",
           }}
-          formatter={(value, name) => [toPersianDigits(Number(value)), String(name)]}
+          formatter={(value, name) => [
+            toPersianDigits(Number(value)),
+            String(name),
+          ]}
           labelFormatter={(label) => formatJalaliDate(String(label))}
         />
         <Line
@@ -137,7 +158,9 @@ export function WinLossChart({ won, lost }: { won: number; lost: number }) {
           innerRadius={52}
           outerRadius={82}
           paddingAngle={4}
-          label={(entry: { name?: string | number; value?: string | number }) => `${String(entry.name)} ${toPersianDigits(Number(entry.value))}`}
+          label={(entry: { name?: string | number; value?: string | number }) =>
+            `${String(entry.name)} ${toPersianDigits(Number(entry.value))}`
+          }
         >
           {data.map((entry) => (
             <Cell key={entry.name} fill={entry.color} />
@@ -152,7 +175,10 @@ export function WinLossChart({ won, lost }: { won: number; lost: number }) {
             fontFamily: "var(--font-vazirmatn), Tahoma",
             color: "var(--text)",
           }}
-          formatter={(value, name) => [toPersianDigits(Number(value)), String(name)]}
+          formatter={(value, name) => [
+            toPersianDigits(Number(value)),
+            String(name),
+          ]}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -161,16 +187,28 @@ export function WinLossChart({ won, lost }: { won: number; lost: number }) {
 
 export function MatchTypeChart({ data }: { data: MatchTypeStat[] }) {
   const chartData = data.map((d) => ({
-    name: MATCH_TYPE_LABELS[d.type],
+    name: matchTypeLabel(d.type),
     برد: d.won,
     باخت: d.lost,
   }));
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <BarChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+      <BarChart
+        data={chartData}
+        margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-        <XAxis dataKey="name" stroke="var(--text-faint)" tick={{ fontSize: 10 }} />
-        <YAxis tickFormatter={faTick} stroke="var(--text-faint)" tick={{ fontSize: 10 }} width={28} />
+        <XAxis
+          dataKey="name"
+          stroke="var(--text-faint)"
+          tick={{ fontSize: 10 }}
+        />
+        <YAxis
+          tickFormatter={faTick}
+          stroke="var(--text-faint)"
+          tick={{ fontSize: 10 }}
+          width={28}
+        />
         <Tooltip
           contentStyle={{
             background: "var(--surface)",
@@ -180,11 +218,16 @@ export function MatchTypeChart({ data }: { data: MatchTypeStat[] }) {
             fontFamily: "var(--font-vazirmatn), Tahoma",
             color: "var(--text)",
           }}
-          formatter={(value, name) => [toPersianDigits(Number(value)), String(name)]}
+          formatter={(value, name) => [
+            toPersianDigits(Number(value)),
+            String(name),
+          ]}
         />
         <Legend
           formatter={(value: string) => (
-            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>{value}</span>
+            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+              {value}
+            </span>
           )}
         />
         <Bar dataKey="برد" fill={BLUE} radius={[8, 8, 0, 0]} />

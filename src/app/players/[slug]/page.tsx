@@ -15,14 +15,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlayerAvatar } from "@/components/league/player-avatar";
-import { RankBadge, MatchStatusBadge, MatchTypeBadge } from "@/components/league/badges";
-import { MatchCard, EncounterScoreBadge } from "@/components/league/score-display";
-import { LazyPlayerCharts } from "@/components/charts/lazy-player-charts";
 import {
-  getPlayerBySlug,
-  loadLeagueData,
-  toEngineMatch,
-} from "@/lib/queries";
+  RankBadge,
+  MatchStatusBadge,
+  MatchTypeBadge,
+} from "@/components/league/badges";
+import {
+  MatchCard,
+  EncounterScoreBadge,
+} from "@/components/league/score-display";
+import { LazyPlayerCharts } from "@/components/charts/lazy-player-charts";
+import { getPlayerBySlug, loadLeagueData, toEngineMatch } from "@/lib/queries";
 import { computeStandings } from "@/lib/engine/ranking";
 import {
   computePlayerAggregate,
@@ -37,7 +40,11 @@ import {
   toPersianDigits,
   toPersianNumber,
 } from "@/lib/jalali";
-import { MATCH_TYPE_LABELS, MATCH_TYPES, type MatchType } from "@/lib/engine/types";
+import {
+  MATCH_TYPE_LABELS,
+  MATCH_TYPES,
+  type MatchType,
+} from "@/lib/engine/types";
 
 export const dynamic = "force-dynamic";
 
@@ -65,19 +72,30 @@ export default async function PlayerProfilePage({
   if (!player) notFound();
 
   const data = await loadLeagueData();
+  const PLAYER_BY_ID = data.playerById;
   const matches = data.engineMatches;
   const standings = computeStandings(data.enginePlayers, matches, {
-    isTournamentComplete: false,
+    isTournamentComplete:
+      data.engineMatches.length > 0 &&
+      data.engineMatches.every(
+        (m) => m.status === "completed" || m.status === "cancelled",
+      ),
   });
   const row = standings.rows.find((r) => r.player.id === player.id);
   const agg = computePlayerAggregate(player.id, matches);
   const h2h = computeHeadToHead(player.id, data.enginePlayers, matches);
   const achievements = computeAchievements(data.enginePlayers, matches);
   const timeline = computePlayerTimeline(player.id, matches);
-  const upcoming = upcomingMatchesFor(player.id, matches, new Date().toISOString());
+  const upcoming = upcomingMatchesFor(
+    player.id,
+    matches,
+    new Date().toISOString(),
+  );
 
   const seed = PLAYER_BY_ID.get(player.id) as PlayerSeed;
-  const myAchievements = achievements.filter((a) => a.holderIds.includes(player.id));
+  const myAchievements = achievements.filter((a) =>
+    a.holderIds.includes(player.id),
+  );
 
   const completedMatches = matches
     .filter(
@@ -133,7 +151,10 @@ export default async function PlayerProfilePage({
               <strong className="text-[var(--text)]">
                 {row ? `رتبه ${toPersianDigits(row.rank)}` : "—"}
               </strong>{" "}
-              · <span className="num text-gold">{toPersianDigits(row?.points ?? 0)}</span>{" "}
+              ·{" "}
+              <span className="num text-gold">
+                {toPersianDigits(row?.points ?? 0)}
+              </span>{" "}
               امتیاز
             </p>
           </div>
@@ -154,7 +175,11 @@ export default async function PlayerProfilePage({
       <section className="mt-6" aria-label="نمای کلی عملکرد">
         <h2 className="mb-4 text-xl font-extrabold">نمای کلی عملکرد</h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <OverviewCard icon={<Swords className="size-4.5 text-royal-light" />} label="مسابقات" value={agg.played} />
+          <OverviewCard
+            icon={<Swords className="size-4.5 text-royal-light" />}
+            label="مسابقات"
+            value={agg.played}
+          />
           <OverviewCard
             icon={<TrendingUp className="size-4.5 text-victory" />}
             label="درصد برد"
@@ -192,7 +217,9 @@ export default async function PlayerProfilePage({
                     </Badge>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-[var(--text-faint)]">{a.description}</p>
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  {a.description}
+                </p>
                 <p className="num mt-2 text-lg font-black text-gold">
                   {toPersianDigits(a.value)}
                 </p>
@@ -215,10 +242,10 @@ export default async function PlayerProfilePage({
           }))}
           won={agg.won}
           lost={agg.lost}
-          byType={MATCH_TYPES.map((type) => ({
+          byType={Object.keys(agg.byMatchType).map((type) => ({
             type,
-            won: agg.byMatchType[type].won,
-            lost: agg.byMatchType[type].lost,
+            won: agg.byMatchType[type]?.won ?? 0,
+            lost: agg.byMatchType[type]?.lost ?? 0,
           }))}
         />
       </section>
@@ -238,7 +265,8 @@ export default async function PlayerProfilePage({
                       {player.name} در برابر {opponent.name}
                     </p>
                     <p className="num mt-0.5 text-xs text-[var(--text-muted)]">
-                      {toPersianDigits(record.won)} برد — {toPersianDigits(record.lost)} باخت
+                      {toPersianDigits(record.won)} برد —{" "}
+                      {toPersianDigits(record.lost)} باخت
                     </p>
                   </div>
                   <EncounterScoreBadge
@@ -252,11 +280,15 @@ export default async function PlayerProfilePage({
                 <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-2.5 text-center text-xs">
                   <div>
                     <p className="text-[var(--text-faint)]">برج زده</p>
-                    <p className="num font-extrabold">{toPersianDigits(record.towersFor)}</p>
+                    <p className="num font-extrabold">
+                      {toPersianDigits(record.towersFor)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[var(--text-faint)]">برج خورده</p>
-                    <p className="num font-extrabold">{toPersianDigits(record.towersAgainst)}</p>
+                    <p className="num font-extrabold">
+                      {toPersianDigits(record.towersAgainst)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[var(--text-faint)]">تفاضل</p>
@@ -359,7 +391,9 @@ function HeroStat({
     <div className="clay-sm min-w-20 px-4 py-3 text-center">
       <p className="text-[11px] text-[var(--text-faint)]">{label}</p>
       <p className={`num text-xl font-black ${color}`}>
-        {signed && value > 0 ? `+${toPersianNumber(value)}` : toPersianNumber(value)}
+        {signed && value > 0
+          ? `+${toPersianNumber(value)}`
+          : toPersianNumber(value)}
       </p>
     </div>
   );

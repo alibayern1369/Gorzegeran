@@ -1,18 +1,16 @@
+import { MatchDateForm } from "@/components/admin/settings-forms";
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth/guard";
 import { ListChecks, ExternalLink, Ban, RotateCcw, Radio } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  MatchStatusBadge,
-  MatchTypeBadge,
-} from "@/components/league/badges";
+import { MatchStatusBadge, MatchTypeBadge } from "@/components/league/badges";
 import { PlayerAvatar } from "@/components/league/player-avatar";
 import { StatusForm } from "@/components/admin/status-form";
 import { ResultForm } from "@/components/admin/result-form";
 import { loadLeagueData } from "@/lib/queries";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import { type PlayerSeed } from "@/lib/constants";
 import { formatJalaliDate, formatTime, toPersianDigits } from "@/lib/jalali";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +23,7 @@ export default async function AdminMatchesPage({
   await requireAdminPage();
   const params = await searchParams;
   const data = await loadLeagueData();
+  const PLAYER_BY_ID = data.playerById;
 
   let matches = data.engineMatches;
   if (params.status) {
@@ -45,8 +44,8 @@ export default async function AdminMatchesPage({
           مدیریت مسابقات
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          وضعیت هر مسابقه را مدیریت کنید؛ برای ثبت سریع نتیجه از فرم هر مسابقه استفاده
-          کنید.
+          وضعیت هر مسابقه را مدیریت کنید؛ برای ثبت سریع نتیجه از فرم هر مسابقه
+          استفاده کنید.
         </p>
       </div>
 
@@ -55,23 +54,25 @@ export default async function AdminMatchesPage({
         <FilterLink active={!params.status} href="/admin/matches">
           همه
         </FilterLink>
-        {(["scheduled", "live", "postponed", "completed", "cancelled"] as const).map(
-          (status) => (
-            <FilterLink
-              key={status}
-              active={params.status === status}
-              href={`/admin/matches?status=${status}`}
-            >
-              {{
+        {(
+          ["scheduled", "live", "postponed", "completed", "cancelled"] as const
+        ).map((status) => (
+          <FilterLink
+            key={status}
+            active={params.status === status}
+            href={`/admin/matches?status=${status}`}
+          >
+            {
+              {
                 scheduled: "زمان‌بندی‌شده",
                 live: "در حال برگزاری",
                 postponed: "به تعویق افتاده",
                 completed: "برگزار شده",
                 cancelled: "لغو شده",
-              }[status]}
-            </FilterLink>
-          ),
-        )}
+              }[status]
+            }
+          </FilterLink>
+        ))}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -91,13 +92,16 @@ export default async function AdminMatchesPage({
                   <PlayerAvatar player={a} size={30} />
                   <span className="text-sm font-bold">{a.name}</span>
                   <span className="num text-sm font-black text-[var(--text-faint)]">
-                    {completed ? `${toPersianDigits(m.towersA!)} — ${toPersianDigits(m.towersB!)}` : "در برابر"}
+                    {completed
+                      ? `${toPersianDigits(m.towersA!)} — ${toPersianDigits(m.towersB!)}`
+                      : "در برابر"}
                   </span>
                   <span className="text-sm font-bold">{b.name}</span>
                   <PlayerAvatar player={b} size={30} />
                 </div>
                 <span className="num text-[11px] text-[var(--text-faint)]">
-                  {formatJalaliDate(m.scheduledAt)} — {formatTime(m.scheduledAt)}
+                  {formatJalaliDate(m.scheduledAt)} —{" "}
+                  {formatTime(m.scheduledAt)}
                 </span>
                 <Button asChild variant="ghost" size="sm">
                   <Link href={`/matches/${m.id}`}>
@@ -124,10 +128,7 @@ export default async function AdminMatchesPage({
                       }}
                       mode="record"
                     />
-                    <StatusForm
-                      matchId={m.id}
-                      status={m.status}
-                    />
+                    <StatusForm matchId={m.id} status={m.status} />
                   </>
                 )}
                 {m.status === "cancelled" && (
@@ -140,6 +141,9 @@ export default async function AdminMatchesPage({
                   </Badge>
                 )}
               </div>
+              {!completed && (
+                <MatchDateForm id={m.id} scheduledAt={m.scheduledAt} />
+              )}
             </Card>
           );
         })}

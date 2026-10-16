@@ -19,7 +19,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[var(--overlay)] backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
       <DialogPrimitive.Content
         className={cn(
-          "clay fixed start-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 p-6 data-[state=open]:animate-pop",
+          "clay fixed inset-x-4 top-1/2 z-50 mx-auto max-h-[85dvh] w-auto max-w-lg -translate-y-1/2 overflow-y-auto p-4 sm:p-6",
           className,
         )}
         {...props}
@@ -41,7 +41,10 @@ export function DialogHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("mb-4 flex flex-col gap-1.5 text-start", className)} {...props} />
+    <div
+      className={cn("mb-4 flex flex-col gap-1.5 text-start", className)}
+      {...props}
+    />
   );
 }
 

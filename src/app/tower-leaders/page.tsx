@@ -8,7 +8,7 @@ import { RankBadge } from "@/components/league/badges";
 import { AnimatedCounter } from "@/components/league/animated-counter";
 import { loadLeagueData } from "@/lib/queries";
 import { computeTowerLeaders } from "@/lib/engine/stats";
-import { TOWER_LEADER_TITLE, PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import { TOWER_LEADER_TITLE, type PlayerSeed } from "@/lib/constants";
 import { toPersianDigits, toPersianNumber } from "@/lib/jalali";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,16 @@ export const metadata: Metadata = {
 
 export default async function TowerLeadersPage() {
   const data = await loadLeagueData();
+  if (!data.players.length)
+    return (
+      <div className="mx-auto max-w-4xl p-6">
+        <Card>
+          هنوز بازیکنی در لیگ نیست. مدیر می‌تواند از بخش مدیریت بازیکنان، لیگ را
+          آماده کند.
+        </Card>
+      </div>
+    );
+  const PLAYER_BY_ID = data.playerById;
   const leaders = computeTowerLeaders(data.enginePlayers, data.engineMatches);
   const top = leaders[0]!;
   const totalDestroyed = leaders.reduce((s, l) => s + l.towersDestroyed, 0);
@@ -76,7 +86,10 @@ export default async function TowerLeadersPage() {
       <Card className="mt-6 border-gold/40 bg-[linear-gradient(135deg,rgba(245,185,66,0.14),var(--surface))]">
         <div className="flex flex-wrap items-center gap-5">
           <span className="gold-sheen clay-sm flex size-20 items-center justify-center rounded-full">
-            <PlayerAvatar player={PLAYER_BY_ID.get(top.player.id) as PlayerSeed} size={72} />
+            <PlayerAvatar
+              player={PLAYER_BY_ID.get(top.player.id) as PlayerSeed}
+              size={72}
+            />
           </span>
           <div className="flex-1">
             <Badge variant="gold">
@@ -85,16 +98,22 @@ export default async function TowerLeadersPage() {
             </Badge>
             <h2 className="mt-2 text-2xl font-black">{top.player.name}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              <span className="num text-gold">{toPersianDigits(top.towersDestroyed)}</span> برج
-              تخریب‌شده در{" "}
-              <span className="num">{toPersianDigits(top.played)}</span> مسابقه — میانگین{" "}
-              <span className="num">{toPersianNumber(top.avgPerMatch)}</span> برج در هر بازی
+              <span className="num text-gold">
+                {toPersianDigits(top.towersDestroyed)}
+              </span>{" "}
+              برج تخریب‌شده در{" "}
+              <span className="num">{toPersianDigits(top.played)}</span> مسابقه
+              — میانگین{" "}
+              <span className="num">{toPersianNumber(top.avgPerMatch)}</span>{" "}
+              برج در هر بازی
             </p>
           </div>
           <div className="flex gap-2">
-            {Array.from({ length: Math.min(top.towersDestroyed, 12) }).map((_, i) => (
-              <TowerIcon key={i} />
-            ))}
+            {Array.from({ length: Math.min(top.towersDestroyed, 12) }).map(
+              (_, i) => (
+                <TowerIcon key={i} />
+              ),
+            )}
           </div>
         </div>
       </Card>
@@ -134,7 +153,9 @@ export default async function TowerLeadersPage() {
                     >
                       <PlayerAvatar player={player} size={38} />
                       <span>
-                        <span className="block text-sm font-extrabold">{player.name}</span>
+                        <span className="block text-sm font-extrabold">
+                          {player.name}
+                        </span>
                         <span className="block text-[11px] text-[var(--text-faint)]">
                           {toPersianDigits(row.played)} مسابقه
                         </span>
@@ -147,7 +168,9 @@ export default async function TowerLeadersPage() {
                         {toPersianDigits(row.towersDestroyed)}
                       </span>
                       <div className="flex gap-0.5" aria-hidden>
-                        {Array.from({ length: Math.min(row.towersDestroyed, 8) }).map((_, i) => (
+                        {Array.from({
+                          length: Math.min(row.towersDestroyed, 8),
+                        }).map((_, i) => (
                           <TowerIcon key={i} small />
                         ))}
                       </div>
@@ -194,8 +217,8 @@ export default async function TowerLeadersPage() {
           <li>۳. تفاضل کلی برج‌ها</li>
         </ol>
         <p className="mt-3 text-xs leading-6 text-[var(--text-faint)]">
-          در صورت برابری کامل معیارها، رتبه‌ها به‌صورت مشترک نمایش داده می‌شوند. آمار این
-          جدول با هر ثبت یا ویرایش نتیجه، به‌صورت خودکار به‌روز می‌شود.
+          در صورت برابری کامل معیارها، رتبه‌ها به‌صورت مشترک نمایش داده می‌شوند.
+          آمار این جدول با هر ثبت یا ویرایش نتیجه، به‌صورت خودکار به‌روز می‌شود.
         </p>
       </Card>
     </div>
@@ -243,7 +266,11 @@ function MiniStat({
         ) : (
           <AnimatedCounter value={value} className="num" />
         )}
-        {suffix && <span className="ms-1 text-xs text-[var(--text-faint)]">{suffix}</span>}
+        {suffix && (
+          <span className="ms-1 text-xs text-[var(--text-faint)]">
+            {suffix}
+          </span>
+        )}
       </p>
     </div>
   );

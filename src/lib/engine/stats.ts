@@ -27,9 +27,25 @@ export interface PlayerAggregate {
   currentStreak: number;
   currentStreakType: "win" | "loss" | "none";
   byMatchType: Record<
-    MatchType,
-    { played: number; won: number; lost: number; towersFor: number; towersAgainst: number }
-  >;
+    (typeof MATCH_TYPES)[number],
+    {
+      played: number;
+      won: number;
+      lost: number;
+      towersFor: number;
+      towersAgainst: number;
+    }
+  > &
+    Record<
+      string,
+      {
+        played: number;
+        won: number;
+        lost: number;
+        towersFor: number;
+        towersAgainst: number;
+      }
+    >;
 }
 
 export function computePlayerAggregate(
@@ -51,17 +67,42 @@ export function computePlayerAggregate(
     currentStreak: 0,
     currentStreakType: "none",
     byMatchType: {
-      custom_deck: { played: 0, won: 0, lost: 0, towersFor: 0, towersAgainst: 0 },
-      draft_type_1: { played: 0, won: 0, lost: 0, towersFor: 0, towersAgainst: 0 },
-      draft_type_2: { played: 0, won: 0, lost: 0, towersFor: 0, towersAgainst: 0 },
-      infinite_elixir: { played: 0, won: 0, lost: 0, towersFor: 0, towersAgainst: 0 },
+      custom_deck: {
+        played: 0,
+        won: 0,
+        lost: 0,
+        towersFor: 0,
+        towersAgainst: 0,
+      },
+      draft_type_1: {
+        played: 0,
+        won: 0,
+        lost: 0,
+        towersFor: 0,
+        towersAgainst: 0,
+      },
+      draft_type_2: {
+        played: 0,
+        won: 0,
+        lost: 0,
+        towersFor: 0,
+        towersAgainst: 0,
+      },
+      infinite_elixir: {
+        played: 0,
+        won: 0,
+        lost: 0,
+        towersFor: 0,
+        towersAgainst: 0,
+      },
     },
   };
 
   const involved = matches
     .filter(
       (m) =>
-        isCountableMatch(m) && (m.playerAId === playerId || m.playerBId === playerId),
+        isCountableMatch(m) &&
+        (m.playerAId === playerId || m.playerBId === playerId),
     )
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.id - b.id);
 
@@ -76,7 +117,13 @@ export function computePlayerAggregate(
     agg.played++;
     agg.towersFor += my;
     agg.towersAgainst += opp;
-    const t = agg.byMatchType[m.matchType];
+    const t = (agg.byMatchType[m.matchType] ??= {
+      played: 0,
+      won: 0,
+      lost: 0,
+      towersFor: 0,
+      towersAgainst: 0,
+    });
     t.played++;
     t.towersFor += my;
     t.towersAgainst += opp;
@@ -152,7 +199,14 @@ export function computeHeadToHead(
       }
     }
     rec.towerDiff = rec.towersFor - rec.towersAgainst;
-    rec.encounterComplete = completed === MATCHES_PER_ENCOUNTER;
+    const expected =
+      matches.find(
+        (m) =>
+          m.encounterSize !== undefined &&
+          ((m.playerAId === playerId && m.playerBId === opponent.id) ||
+            (m.playerBId === playerId && m.playerAId === opponent.id)),
+      )?.encounterSize ?? MATCHES_PER_ENCOUNTER;
+    rec.encounterComplete = expected > 0 && completed === expected;
     rec.encounterWon = rec.won;
     rec.encounterLost = rec.lost;
     records.push(rec);
@@ -223,7 +277,10 @@ export interface Achievement {
   shared: boolean;
 }
 
-const ACHIEVEMENT_LABELS: Record<AchievementKey, { label: string; description: string }> = {
+const ACHIEVEMENT_LABELS: Record<
+  AchievementKey,
+  { label: string; description: string }
+> = {
   most_wins: {
     label: "پهلوان پیروز",
     description: "بیشترین برد در مسابقات انفرادی",
@@ -264,7 +321,9 @@ export function computeAchievements(
     const values = aggs.map((a) => pick(a));
     const best = Math.max(...values);
     if (best < minValue) return;
-    const holderIds = aggs.filter((a) => pick(a) === best).map((a) => a.playerId);
+    const holderIds = aggs
+      .filter((a) => pick(a) === best)
+      .map((a) => a.playerId);
     out.push({
       key,
       ...ACHIEVEMENT_LABELS[key],
@@ -300,7 +359,8 @@ export function computePlayerTimeline(
   const involved = matches
     .filter(
       (m) =>
-        isCountableMatch(m) && (m.playerAId === playerId || m.playerBId === playerId),
+        isCountableMatch(m) &&
+        (m.playerAId === playerId || m.playerBId === playerId),
     )
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.id - b.id);
 
@@ -333,12 +393,11 @@ export function upcomingMatchesFor(
     .filter(
       (m) =>
         (m.playerAId === playerId || m.playerBId === playerId) &&
-        (m.status === "scheduled" || m.status === "live" || m.status === "postponed"),
+        (m.status === "scheduled" ||
+          m.status === "live" ||
+          m.status === "postponed"),
     )
-    .sort(
-      (a, b) =>
-        a.scheduledAt.localeCompare(b.scheduledAt) || a.id - b.id,
-    )
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.id - b.id)
     .filter((m) => m.scheduledAt >= nowIso || m.status === "postponed");
 }
 
@@ -360,10 +419,15 @@ export function computeLeagueSummary(
 ): LeagueSummary {
   const totalMatches = matches.filter((m) => m.status !== "cancelled").length;
   const completedMatches = matches.filter(isCountableMatch).length;
-  const cancelledMatches = matches.filter((m) => m.status === "cancelled").length;
+  const cancelledMatches = matches.filter(
+    (m) => m.status === "cancelled",
+  ).length;
   const liveMatches = matches.filter((m) => m.status === "live").length;
   const remainingMatches = matches.filter(
-    (m) => m.status === "scheduled" || m.status === "postponed" || m.status === "live",
+    (m) =>
+      m.status === "scheduled" ||
+      m.status === "postponed" ||
+      m.status === "live",
   ).length;
 
   const upcoming = matches
@@ -376,10 +440,7 @@ export function computeLeagueSummary(
 
   const latestResults = matches
     .filter(isCountableMatch)
-    .sort(
-      (a, b) =>
-        (b.scheduledAt).localeCompare(a.scheduledAt) || b.id - a.id,
-    )
+    .sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt) || b.id - a.id)
     .slice(0, 6);
 
   return {
@@ -389,7 +450,9 @@ export function computeLeagueSummary(
     cancelledMatches,
     liveMatches,
     progressPercent:
-      totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0,
+      totalMatches > 0
+        ? Math.round((completedMatches / totalMatches) * 100)
+        : 0,
     nextMatch: upcoming[0] ?? null,
     latestResults,
   };

@@ -12,7 +12,11 @@ import {
   validateScheduleStructure,
   type ScheduledMatchSlot,
 } from "../engine/schedule";
-import { PLAYER_SEEDS, TOURNAMENT_NAME, TOURNAMENT_SUBTITLE } from "../constants";
+import {
+  PLAYER_SEEDS,
+  TOURNAMENT_NAME,
+  TOURNAMENT_SUBTITLE,
+} from "../constants";
 import { hashPassword } from "../auth/password";
 
 export interface SeedOptions {
@@ -86,7 +90,9 @@ export async function seedDatabase(
   });
   const check = validateScheduleStructure(playerIds, schedule);
   if (!check.ok) {
-    throw new Error(`برنامهٔ تولیدشده نامعتبر است: ${check.problems.join(" | ")}`);
+    throw new Error(
+      `برنامهٔ تولیدشده نامعتبر است: ${check.problems.join(" | ")}`,
+    );
   }
 
   // ۵) رویارویی‌ها (یک رویارویی برای هر جفت بازیکن)
@@ -134,7 +140,9 @@ export async function seedDatabase(
     .select()
     .from(s.matches)
     .where(eq(s.matches.tournamentId, tournamentId));
-  const existingKeys = new Set(existingMatches.map((m) => `${m.encounterId}-${m.matchType}`));
+  const existingKeys = new Set(
+    existingMatches.map((m) => `${m.encounterId}-${m.matchType}`),
+  );
   for (const m of existingMatches) matchIds.push(m.id);
 
   if (existingMatches.length === 0) {
@@ -150,6 +158,7 @@ export async function seedDatabase(
           tournamentId,
           encounterId,
           matchType: slot.matchType,
+          gameIndex: slot.gameIndex,
           playerAId: slot.playerAId,
           playerBId: slot.playerBId,
           scheduledAt: new Date(slot.scheduledAt),
@@ -167,7 +176,11 @@ export async function seedDatabase(
   const adminEmail = options.adminEmail ?? process.env.ADMIN_EMAIL;
   const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD;
   if (adminEmail && adminPassword) {
-    const found = await db.select().from(s.users).where(eq(s.users.email, adminEmail)).limit(1);
+    const found = await db
+      .select()
+      .from(s.users)
+      .where(eq(s.users.email, adminEmail))
+      .limit(1);
     if (!found[0]) {
       await db.insert(s.users).values({
         email: adminEmail,

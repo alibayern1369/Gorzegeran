@@ -4,12 +4,15 @@
  * - هرگز داده‌های حساس مدیر کش نمی‌شوند
  * - صفحهٔ آفلاین برای درخواست‌های ناموفق
  */
-const CACHE_NAME = "garz-geran-v1";
-const STATIC_ASSETS = ["/offline", "/icon.svg", "/manifest"];
+const CACHE_NAME = "garz-geran-v2";
+const STATIC_ASSETS = ["/offline", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -18,7 +21,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -32,7 +39,8 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // مسیرهای مدیریتی و API هرگز کش نمی‌شوند
-  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api")) return;
+  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api"))
+    return;
 
   // ناوبری: شبکه با فالبک آفلاین
   if (request.mode === "navigate") {
@@ -40,11 +48,17 @@ self.addEventListener("fetch", (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          if (response.ok)
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, copy))
+              .catch(() => {});
           return response;
         })
         .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match("/offline")),
+          caches
+            .match(request)
+            .then((cached) => cached || caches.match("/offline")),
         ),
     );
     return;
@@ -62,7 +76,10 @@ self.addEventListener("fetch", (event) => {
           cached ||
           fetch(request).then((response) => {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, copy))
+              .catch(() => {});
             return response;
           }),
       ),

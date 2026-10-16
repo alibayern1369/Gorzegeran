@@ -20,10 +20,7 @@ import { ProgressBar } from "@/components/league/progress-bar";
 import { MatchCard } from "@/components/league/score-display";
 import { loadLeagueData } from "@/lib/queries";
 import { computeStandings } from "@/lib/engine/ranking";
-import {
-  computeLeagueSummary,
-  computeTowerLeaders,
-} from "@/lib/engine/stats";
+import { computeLeagueSummary, computeTowerLeaders } from "@/lib/engine/stats";
 import { toPersianDigits, formatJalaliDate, formatTime } from "@/lib/jalali";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +30,17 @@ export default async function AdminDashboard() {
   const data = await loadLeagueData();
   const nowIso = new Date().toISOString();
   const standings = computeStandings(data.enginePlayers, data.engineMatches, {
-    isTournamentComplete: false,
+    isTournamentComplete:
+      data.engineMatches.length > 0 &&
+      data.engineMatches.every(
+        (m) => m.status === "completed" || m.status === "cancelled",
+      ),
   });
   const summary = computeLeagueSummary(data.engineMatches, nowIso);
-  const towerLeaders = computeTowerLeaders(data.enginePlayers, data.engineMatches);
+  const towerLeaders = computeTowerLeaders(
+    data.enginePlayers,
+    data.engineMatches,
+  );
   const leader = standings.rows[0]!;
   const towerLeader = towerLeaders[0]!;
 
@@ -62,14 +66,14 @@ export default async function AdminDashboard() {
         <StatCard
           icon={<Crown className="size-5 text-gold" />}
           label="رهبر لیگ"
-          text={leader.player.name}
-          suffix={`${toPersianDigits(leader.points)} امتیاز`}
+          text={leader?.player.name ?? "هنوز بازیکنی نیست"}
+          suffix={`${toPersianDigits(leader?.points ?? 0)} امتیاز`}
         />
         <StatCard
           icon={<Flame className="size-5 text-elixir-light" />}
           label="دژگشای برتر"
-          text={towerLeader.player.name}
-          suffix={`${toPersianDigits(towerLeader.towersDestroyed)} برج`}
+          text={towerLeader?.player.name ?? "هنوز بازیکنی نیست"}
+          suffix={`${toPersianDigits(towerLeader?.towersDestroyed ?? 0)} برج`}
         />
       </div>
 
@@ -79,9 +83,14 @@ export default async function AdminDashboard() {
           <div>
             <h2 className="text-lg font-extrabold">پیشرفت تورنمنت</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              <span className="num text-gold">{toPersianDigits(summary.completedMatches)}</span>{" "}
-              از <span className="num">{toPersianDigits(summary.totalMatches)}</span> مسابقه
-              ثبت نتیجه شده است
+              <span className="num text-gold">
+                {toPersianDigits(summary.completedMatches)}
+              </span>{" "}
+              از{" "}
+              <span className="num">
+                {toPersianDigits(summary.totalMatches)}
+              </span>{" "}
+              مسابقه ثبت نتیجه شده است
               {summary.liveMatches > 0 && (
                 <Badge variant="live" className="ms-2">
                   {toPersianDigits(summary.liveMatches)} در حال برگزاری
@@ -142,9 +151,9 @@ export default async function AdminDashboard() {
           </div>
           <div className="flex flex-col gap-3">
             {summary.latestResults.length > 0 ? (
-              summary.latestResults.slice(0, 3).map((m) => (
-                <MatchCard key={m.id} match={m} compact />
-              ))
+              summary.latestResults
+                .slice(0, 3)
+                .map((m) => <MatchCard key={m.id} match={m} compact />)
             ) : (
               <p className="py-8 text-center text-sm text-[var(--text-faint)]">
                 هنوز نتیجه‌ای ثبت نشده است.
@@ -167,7 +176,8 @@ export default async function AdminDashboard() {
                 <div key={m.id}>
                   <MatchCard match={m} compact />
                   <p className="num mt-1 text-center text-[10px] text-[var(--text-faint)]">
-                    {formatJalaliDate(m.scheduledAt)} — {formatTime(m.scheduledAt)}
+                    {formatJalaliDate(m.scheduledAt)} —{" "}
+                    {formatTime(m.scheduledAt)}
                   </p>
                 </div>
               ))
@@ -242,7 +252,9 @@ function StatCard({
           text
         )}
       </p>
-      {suffix && <p className="text-[11px] text-[var(--text-faint)]">{suffix}</p>}
+      {suffix && (
+        <p className="text-[11px] text-[var(--text-faint)]">{suffix}</p>
+      )}
     </div>
   );
 }

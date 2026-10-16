@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   // کاهش شدید حجم باندل سرور و جلوگیری از بسته‌بندی WASM پی‌جی‌لایت
   serverExternalPackages: ["@electric-sql/pglite", "postgres"],
   experimental: {
+    serverActions: { bodySizeLimit: "4mb" },
     optimizePackageImports: ["lucide-react", "motion"],
   },
 };

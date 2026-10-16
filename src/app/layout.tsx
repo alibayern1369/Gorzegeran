@@ -13,6 +13,13 @@ import {
   TOURNAMENT_SUBTITLE,
 } from "@/lib/constants";
 import "./globals.css";
+import { getAllPlayers } from "@/lib/queries";
+import { visualPlayer } from "@/lib/visual-players";
+import { LeagueProvider } from "@/components/league-provider";
+import { getBranding } from "@/lib/branding";
+import { InstallPrompt } from "@/components/install-prompt";
+
+export const dynamic = "force-dynamic";
 
 const vazirmatn = localFont({
   src: "./fonts/Vazirmatn-Variable.woff2",
@@ -22,7 +29,8 @@ const vazirmatn = localFont({
   fallback: ["Tahoma", "Arial"],
 });
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
+  manifest: "/manifest.webmanifest",
   title: {
     default: `${TOURNAMENT_NAME} — ${TOURNAMENT_SUBTITLE}`,
     template: `%s | ${TOURNAMENT_NAME}`,
@@ -42,6 +50,21 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getBranding();
+  return {
+    ...baseMetadata,
+    applicationName: branding.shortName,
+    title: { default: branding.name, template: `%s | ${branding.name}` },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: branding.shortName,
+    },
+    openGraph: { ...baseMetadata.openGraph, title: branding.name },
+  };
+}
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0B1020" },
@@ -52,10 +75,32 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [players, branding] = await Promise.all([
+    getAllPlayers(),
+    getBranding(),
+  ]);
   return (
-    <html lang="fa" dir="rtl" className="dark" suppressHydrationWarning>
+    <html
+      lang="fa"
+      dir="rtl"
+      className={`${vazirmatn.variable} dark`}
+      suppressHydrationWarning
+    >
       <head>
+        <link rel="icon" href={branding.faviconUrl ?? "/icon.svg"} />
+        <link
+          rel="apple-touch-icon"
+          href={
+            branding.appIconUrl
+              ? `${branding.appIconUrl}?size=180`
+              : "/icon-192.png"
+          }
+        />
         <script
           // جلوگیری از پرش تم هنگام بارگذاری
           dangerouslySetInnerHTML={{
@@ -63,35 +108,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`${vazirmatn.variable} min-h-dvh antialiased`}>
-        <ThemeProvider>
-          <RealtimeProvider>
-            <div className="flex min-h-dvh flex-col">
-              <SiteHeader />
-              <main id="main-content" className="flex-1 pb-24 pt-4 md:pb-10">
-                {children}
-              </main>
-              <SiteFooter />
-              <BottomNav />
-            </div>
-          </RealtimeProvider>
-          <Toaster
-            position="top-center"
-            dir="rtl"
-            toastOptions={{
-              style: {
-                fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif",
-                direction: "rtl",
-                background: "var(--surface)",
-                color: "var(--text)",
-                border: "1px solid var(--border)",
-                borderRadius: "1.15rem",
-                boxShadow: "var(--shadow-clay-sm)",
-              },
-            }}
-          />
-          <SwRegister />
-        </ThemeProvider>
+      <body className={`${vazirmatn.className} min-h-dvh antialiased`}>
+        <LeagueProvider players={players.map(visualPlayer)}>
+          <ThemeProvider>
+            <RealtimeProvider>
+              <div className="flex min-h-dvh flex-col">
+                <SiteHeader branding={branding} />
+                <main id="main-content" className="flex-1 pb-24 pt-4 md:pb-10">
+                  {children}
+                </main>
+                <SiteFooter />
+                <BottomNav />
+              </div>
+            </RealtimeProvider>
+            <Toaster
+              position="top-center"
+              dir="rtl"
+              toastOptions={{
+                style: {
+                  fontFamily: "var(--font-vazirmatn), Tahoma, sans-serif",
+                  direction: "rtl",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "1.15rem",
+                  boxShadow: "var(--shadow-clay-sm)",
+                },
+              }}
+            />
+            <SwRegister />
+            <InstallPrompt
+              name={branding.shortName}
+              icon={branding.appIconUrl ?? "/icon-192.png"}
+            />
+          </ThemeProvider>
+        </LeagueProvider>
       </body>
     </html>
   );

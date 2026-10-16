@@ -10,3 +10,5 @@ coverage
 dist
 .DS_Store
 .neon
+test-results/
+playwright-report/

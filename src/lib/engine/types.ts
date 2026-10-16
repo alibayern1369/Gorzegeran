@@ -10,7 +10,7 @@ export const MATCH_TYPES = [
   "infinite_elixir",
 ] as const;
 
-export type MatchType = (typeof MATCH_TYPES)[number];
+export type MatchType = string;
 
 export const MATCH_TYPE_LABELS: Record<MatchType, string> = {
   custom_deck: "دک انتخابی",
@@ -66,6 +66,7 @@ export interface EnginePlayer {
 }
 
 export interface EngineMatch {
+  encounterSize?: number;
   id: number;
   encounterId: number;
   matchType: MatchType;
@@ -137,4 +138,11 @@ export interface TowerLeaderRow {
   avgPerMatch: number;
   rank: number;
   tied: boolean;
+}
+
+export function matchTypeLabel(type: string): string {
+  return MATCH_TYPE_LABELS[type] ?? type;
+}
+export function matchTypeLabelEn(type: string): string {
+  return MATCH_TYPE_LABELS_EN[type] ?? type;
 }

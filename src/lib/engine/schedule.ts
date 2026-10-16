@@ -10,7 +10,6 @@
 import {
   MATCHES_PER_ENCOUNTER,
   MATCH_TYPES,
-  NIGHT_SLOTS_MINUTES,
   TOTAL_NIGHTS,
   type MatchType,
 } from "./types";
@@ -29,6 +28,7 @@ export interface RoundSchedule {
 }
 
 export interface ScheduledMatchSlot {
+  gameIndex: number;
   playerAId: number;
   playerBId: number;
   matchType: MatchType;
@@ -36,7 +36,7 @@ export interface ScheduledMatchSlot {
   slotIndex: number;
   /** ISO timestamp به وقت تهران (با آفست +03:30) */
   scheduledAt: string;
-  stage: 1 | 2;
+  stage: number;
   round: number;
 }
 
@@ -48,14 +48,14 @@ const BYE = -1;
  */
 export function generateRounds(playerIds: number[]): RoundSchedule[] {
   const n = playerIds.length;
-  if (n < 3 || n % 2 === 0) {
-    throw new Error("تولید برنامه به تعداد فرد و حداقل ۳ بازیکن نیاز دارد.");
+  if (n < 2 || new Set(playerIds).size !== n) {
+    throw new Error("حداقل دو بازیکن با شناسه‌های یکتا لازم است.");
   }
-  const m = n + 1; // افزودن صندلی «استراحت» برای روش چرخشی
-  let rotation = [...playerIds, BYE];
+  const m = n % 2 ? n + 1 : n;
+  let rotation = n % 2 ? [...playerIds, BYE] : [...playerIds];
   const rounds: RoundSchedule[] = [];
 
-  for (let r = 0; r < n; r++) {
+  for (let r = 0; r < m - 1; r++) {
     const pairings: Array<{ playerAId: number; playerBId: number }> = [];
     let byePlayerId = -1;
     for (let i = 0; i < m / 2; i++) {
@@ -68,7 +68,9 @@ export function generateRounds(playerIds: number[]): RoundSchedule[] {
       } else {
         // نرمال‌سازی ترتیب برای قطعیت: شناسهٔ کوچک‌تر در جایگاه اول
         pairings.push(
-          a < b ? { playerAId: a, playerBId: b } : { playerAId: b, playerBId: a },
+          a < b
+            ? { playerAId: a, playerBId: b }
+            : { playerAId: b, playerBId: a },
         );
       }
     }
@@ -87,6 +89,9 @@ export interface ScheduleOptions {
   startDay: number;
   /** فاصلهٔ بین شب‌ها به روز */
   nightIntervalDays?: number;
+  matchTypes?: string[];
+  startTime?: string;
+  slotMinutes?: number;
 }
 
 /**
@@ -101,37 +106,46 @@ export function generateTournamentSchedule(
   const rounds = generateRounds(playerIds);
   const interval = options.nightIntervalDays ?? 2;
   const slots: ScheduledMatchSlot[] = [];
+  const types = options.matchTypes ?? [...MATCH_TYPES];
+  const stages = Math.ceil(types.length / 2);
+  const [hour, minute] = (options.startTime ?? "00:00")
+    .split(":")
+    .map(Number) as [number, number];
 
-  for (let night = 0; night < TOTAL_NIGHTS; night++) {
-    const stage: 1 | 2 = night < 5 ? 1 : 2;
-    const roundIndex = night % 5;
+  for (let night = 0; night < rounds.length * stages; night++) {
+    const stage = Math.floor(night / rounds.length) + 1;
+    const roundIndex = night % rounds.length;
     const round = rounds[roundIndex]!;
-    const stageTypes: [MatchType, MatchType] =
-      stage === 1
-        ? ["custom_deck", "draft_type_1"]
-        : ["draft_type_2", "infinite_elixir"];
+    const stageTypes = types.slice((stage - 1) * 2, stage * 2);
 
     const nightDate = new Date(
-      Date.UTC(options.startYear, options.startMonth - 1, options.startDay + night * interval),
+      Date.UTC(
+        options.startYear,
+        options.startMonth - 1,
+        options.startDay + night * interval,
+      ),
     );
 
     // دو جفت رویارویی این شب → هر جفت دو مسابقه پیاپی
     round.pairings.forEach((pairing, pairingIndex) => {
       stageTypes.forEach((matchType, typeIndex) => {
-        const slotIndex = pairingIndex * 2 + typeIndex;
-        const minutes = NIGHT_SLOTS_MINUTES[slotIndex]!;
+        const slotIndex = pairingIndex * stageTypes.length + typeIndex;
+        const minutes =
+          hour * 60 + minute + slotIndex * (options.slotMinutes ?? 15);
+        const slotDate = new Date(nightDate.getTime() + minutes * 60_000);
         slots.push({
+          gameIndex: (stage - 1) * 2 + typeIndex,
           playerAId: pairing.playerAId,
           playerBId: pairing.playerBId,
           matchType,
           nightIndex: night,
           slotIndex,
           scheduledAt: isoTehran(
-            nightDate.getUTCFullYear(),
-            nightDate.getUTCMonth() + 1,
-            nightDate.getUTCDate(),
-            0,
-            minutes,
+            slotDate.getUTCFullYear(),
+            slotDate.getUTCMonth() + 1,
+            slotDate.getUTCDate(),
+            slotDate.getUTCHours(),
+            slotDate.getUTCMinutes(),
           ),
           stage,
           round: roundIndex,
@@ -188,11 +202,14 @@ export function validateScheduleStructure(
   const n = playerIds.length;
   const expectedTotal = ((n * (n - 1)) / 2) * MATCHES_PER_ENCOUNTER;
   if (slots.length !== expectedTotal) {
-    problems.push(`تعداد مسابقات باید ${expectedTotal} باشد، ${slots.length} شد.`);
+    problems.push(
+      `تعداد مسابقات باید ${expectedTotal} باشد، ${slots.length} شد.`,
+    );
   }
 
   // هر جفت بازیکن دقیقاً ۴ مسابقه با ۴ نوع یکتا
-  const pairKey = (a: number, b: number) => [Math.min(a, b), Math.max(a, b)].join("-");
+  const pairKey = (a: number, b: number) =>
+    [Math.min(a, b), Math.max(a, b)].join("-");
   const pairMap = new Map<string, Set<MatchType>>();
   // هر بازیکن هر شب حداکثر ۲ مسابقه و هیچ دو مسابقه‌ای هم‌زمان نیست
   const nightPlayerCount = new Map<string, number>();
@@ -202,7 +219,8 @@ export function validateScheduleStructure(
     const key = pairKey(s.playerAId, s.playerBId);
     if (!pairMap.has(key)) pairMap.set(key, new Set());
     const types = pairMap.get(key)!;
-    if (types.has(s.matchType)) problems.push(`نوع مسابقهٔ تکراری برای جفت ${key}`);
+    if (types.has(s.matchType))
+      problems.push(`نوع مسابقهٔ تکراری برای جفت ${key}`);
     types.add(s.matchType);
 
     for (const p of [s.playerAId, s.playerBId]) {
@@ -215,7 +233,8 @@ export function validateScheduleStructure(
   }
 
   for (const [key, count] of nightPlayerCount) {
-    if (count > 2) problems.push(`بازیکن ${key} بیش از ۲ مسابقه در یک شب دارد.`);
+    if (count > 2)
+      problems.push(`بازیکن ${key} بیش از ۲ مسابقه در یک شب دارد.`);
   }
   for (const [key, types] of pairMap) {
     if (types.size !== MATCHES_PER_ENCOUNTER) {
@@ -227,7 +246,8 @@ export function validateScheduleStructure(
   for (const p of playerIds) {
     const playedNights = new Set<number>();
     for (const s of slots) {
-      if (s.playerAId === p || s.playerBId === p) playedNights.add(s.nightIndex);
+      if (s.playerAId === p || s.playerBId === p)
+        playedNights.add(s.nightIndex);
     }
     if (playedNights.size !== TOTAL_NIGHTS - 2) {
       problems.push(`بازیکن ${p} باید دقیقاً در ۸ شب بازی کند (۲ شب استراحت).`);
@@ -237,7 +257,8 @@ export function validateScheduleStructure(
   // هر شب دقیقاً ۴ مسابقه، ۲ جفت، ۴ بازیکن، ۱ استراحت
   for (let night = 0; night < TOTAL_NIGHTS; night++) {
     const nightSlots = slots.filter((s) => s.nightIndex === night);
-    if (nightSlots.length !== 4) problems.push(`شب ${night} باید ۴ مسابقه داشته باشد.`);
+    if (nightSlots.length !== 4)
+      problems.push(`شب ${night} باید ۴ مسابقه داشته باشد.`);
     const players = new Set<number>();
     const pairs = new Set<string>();
     for (const s of nightSlots) {
@@ -245,10 +266,13 @@ export function validateScheduleStructure(
       players.add(s.playerBId);
       pairs.add(pairKey(s.playerAId, s.playerBId));
     }
-    if (players.size !== 4) problems.push(`شب ${night} باید ۴ بازیکن فعال داشته باشد.`);
-    if (pairs.size !== 2) problems.push(`شب ${night} باید ۲ رویارویی مجزا داشته باشد.`);
+    if (players.size !== 4)
+      problems.push(`شب ${night} باید ۴ بازیکن فعال داشته باشد.`);
+    if (pairs.size !== 2)
+      problems.push(`شب ${night} باید ۲ رویارویی مجزا داشته باشد.`);
     const resting = playerIds.filter((p) => !players.has(p));
-    if (resting.length !== 1) problems.push(`شب ${night} باید دقیقاً ۱ بازیکن استراحت داشته باشد.`);
+    if (resting.length !== 1)
+      problems.push(`شب ${night} باید دقیقاً ۱ بازیکن استراحت داشته باشد.`);
   }
 
   return { ok: problems.length === 0, problems };

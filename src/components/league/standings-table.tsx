@@ -6,7 +6,8 @@ import { Info, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import { RankBadge } from "@/components/league/badges";
 import { PlayerAvatar } from "@/components/league/player-avatar";
 import { Badge } from "@/components/ui/badge";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import type { PlayerSeed } from "@/lib/constants";
+import { useLeaguePlayers } from "@/components/league-provider";
 import { toPersianDigits, toPersianNumber } from "@/lib/jalali";
 import type { PlayerStandingRow } from "@/lib/engine/types";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,12 @@ interface StandingsTableProps {
   showTiebreakNote?: boolean;
 }
 
-export function StandingsTable({ rows, compact = false, showTiebreakNote = true }: StandingsTableProps) {
+export function StandingsTable({
+  rows,
+  compact = false,
+  showTiebreakNote = true,
+}: StandingsTableProps) {
+  const { playerById: PLAYER_BY_ID } = useLeaguePlayers();
   const reduceMotion = useReducedMotion();
 
   return (
@@ -82,16 +88,26 @@ export function StandingsTable({ rows, compact = false, showTiebreakNote = true 
                       )}
                     </Link>
                   </td>
-                  <td className="num text-center">{toPersianDigits(row.played)}</td>
-                  <td className="num text-center text-victory">{toPersianDigits(row.won)}</td>
-                  <td className="num text-center text-defeat">{toPersianDigits(row.lost)}</td>
+                  <td className="num text-center">
+                    {toPersianDigits(row.played)}
+                  </td>
+                  <td className="num text-center text-victory">
+                    {toPersianDigits(row.won)}
+                  </td>
+                  <td className="num text-center text-defeat">
+                    {toPersianDigits(row.lost)}
+                  </td>
                   <td className="text-center">
                     <span className="clay-sm num inline-flex min-w-10 items-center justify-center rounded-xl bg-[var(--table-header)] px-2.5 py-1 text-base font-extrabold text-gold">
                       {toPersianDigits(row.points)}
                     </span>
                   </td>
-                  <td className="num text-center">{toPersianDigits(row.towersFor)}</td>
-                  <td className="num text-center">{toPersianDigits(row.towersAgainst)}</td>
+                  <td className="num text-center">
+                    {toPersianDigits(row.towersFor)}
+                  </td>
+                  <td className="num text-center">
+                    {toPersianDigits(row.towersAgainst)}
+                  </td>
                   <td className="text-center">
                     <DiffValue value={row.towerDiff} />
                   </td>
@@ -118,7 +134,8 @@ export function StandingsTable({ rows, compact = false, showTiebreakNote = true 
                 href={`/players/${player.slug}`}
                 className={cn(
                   "clay-sm block p-3.5",
-                  row.rank === 1 && "border-gold/40 bg-[linear-gradient(135deg,rgba(245,185,66,0.14),var(--surface))]",
+                  row.rank === 1 &&
+                    "border-gold/40 bg-[linear-gradient(135deg,rgba(245,185,66,0.14),var(--surface))]",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -126,15 +143,21 @@ export function StandingsTable({ rows, compact = false, showTiebreakNote = true 
                   <PlayerAvatar player={player} size={42} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-extrabold">{player.name}</p>
+                      <p className="truncate text-sm font-extrabold">
+                        {player.name}
+                      </p>
                       {row.requiresTiebreak && (
-                        <Badge variant="elixir" className="scale-90 px-1.5 py-0.5 text-[9px]">
+                        <Badge
+                          variant="elixir"
+                          className="scale-90 px-1.5 py-0.5 text-[9px]"
+                        >
                           تکلیفی
                         </Badge>
                       )}
                     </div>
                     <p className="text-[10px] text-[var(--text-faint)]">
-                      {toPersianDigits(row.won)} برد · {toPersianDigits(row.lost)} باخت ·{" "}
+                      {toPersianDigits(row.won)} برد ·{" "}
+                      {toPersianDigits(row.lost)} باخت ·{" "}
                       {toPersianDigits(row.played)} بازی
                     </p>
                   </div>
@@ -160,7 +183,10 @@ export function StandingsTable({ rows, compact = false, showTiebreakNote = true 
 
       {showTiebreakNote && rows.some((r) => r.requiresTiebreak) && (
         <div className="clay-sm mt-4 flex items-start gap-2.5 p-4">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-gold" aria-hidden />
+          <AlertTriangle
+            className="mt-0.5 size-4 shrink-0 text-gold"
+            aria-hidden
+          />
           <p className="text-xs leading-6 text-[var(--text-muted)]">
             برخی پهلوانان در تمام معیارهای رتبه‌بندی برابرند؛ رتبهٔ نهایی با{" "}
             <strong className="text-gold">بازی تکلیفی</strong> تعیین می‌شود.
@@ -171,7 +197,13 @@ export function StandingsTable({ rows, compact = false, showTiebreakNote = true 
   );
 }
 
-function DiffValue({ value, small = false }: { value: number; small?: boolean }) {
+function DiffValue({
+  value,
+  small = false,
+}: {
+  value: number;
+  small?: boolean;
+}) {
   return (
     <span
       className={cn(

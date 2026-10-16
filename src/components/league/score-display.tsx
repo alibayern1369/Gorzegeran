@@ -1,10 +1,13 @@
+"use client";
+import { matchTypeLabel } from "@/lib/engine/types";
 import Link from "next/link";
 import { Swords, Trophy, ShieldX, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MatchStatusBadge, MatchTypeBadge } from "@/components/league/badges";
 import { PlayerAvatar } from "@/components/league/player-avatar";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
+import type { PlayerSeed } from "@/lib/constants";
+import { useLeaguePlayers } from "@/components/league-provider";
 import {
   formatJalaliDate,
   formatTime,
@@ -20,7 +23,12 @@ interface MatchCardProps {
   compact?: boolean;
 }
 
-export function MatchCard({ match, showDate = true, compact = false }: MatchCardProps) {
+export function MatchCard({
+  match,
+  showDate = true,
+  compact = false,
+}: MatchCardProps) {
+  const { playerById: PLAYER_BY_ID } = useLeaguePlayers();
   const a = PLAYER_BY_ID.get(match.playerAId) as PlayerSeed;
   const b = PLAYER_BY_ID.get(match.playerBId) as PlayerSeed;
   const completed = match.status === "completed" && match.towersA !== null;
@@ -34,12 +42,13 @@ export function MatchCard({ match, showDate = true, compact = false }: MatchCard
         compact && "p-3",
       )}
     >
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <MatchTypeBadge type={match.matchType} />
         <div className="flex items-center gap-1.5">
           {showDate && (
             <span className="num text-[11px] text-[var(--text-faint)]">
-              {relativeDayLabel(match.scheduledAt)} · {formatTime(match.scheduledAt)}
+              {relativeDayLabel(match.scheduledAt)} ·{" "}
+              {formatTime(match.scheduledAt)}
             </span>
           )}
           <MatchStatusBadge status={match.status} />
@@ -61,7 +70,10 @@ export function MatchCard({ match, showDate = true, compact = false }: MatchCard
             </span>
           )}
           {completed && (
-            <Badge variant={aWon ? "victory" : "defeat"} className="text-[10px]">
+            <Badge
+              variant={aWon ? "victory" : "defeat"}
+              className="text-[10px]"
+            >
               <Trophy className="size-3" aria-hidden />
               {aWon ? a.name : b.name}
             </Badge>
@@ -100,7 +112,9 @@ function PlayerSide({
         >
           {player.name}
         </p>
-        <p className="truncate text-[10px] text-[var(--text-faint)]">{player.title}</p>
+        <p className="truncate text-[10px] text-[var(--text-faint)]">
+          {player.title}
+        </p>
       </div>
     </div>
   );
@@ -108,6 +122,7 @@ function PlayerSide({
 
 /** کارت نتیجهٔ برجسته برای مسابقهٔ تکمیل‌شده */
 export function ScoreShowcase({ match }: { match: EngineMatch }) {
+  const { playerById: PLAYER_BY_ID } = useLeaguePlayers();
   const a = PLAYER_BY_ID.get(match.playerAId) as PlayerSeed;
   const b = PLAYER_BY_ID.get(match.playerBId) as PlayerSeed;
   const aWon = match.winnerId === match.playerAId;
@@ -121,15 +136,19 @@ export function ScoreShowcase({ match }: { match: EngineMatch }) {
           <Trophy className="size-3.5" aria-hidden />
           نتیجهٔ نهایی
         </Badge>
-        <div className="mt-5 flex items-center justify-center gap-4 sm:gap-8">
+        <div className="mt-5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-center justify-center gap-2 sm:gap-8">
           <BigPlayer player={a} won={aWon} />
           <div className="flex flex-col items-center">
-            <span className="num flex items-baseline gap-2 text-4xl font-extrabold sm:text-5xl">
-              <span className={aWon ? "text-victory" : "text-[var(--text-muted)]"}>
+            <span className="num flex items-baseline gap-1 text-2xl font-extrabold sm:text-5xl">
+              <span
+                className={aWon ? "text-victory" : "text-[var(--text-muted)]"}
+              >
                 {toPersianDigits(match.towersA!)}
               </span>
               <span className="text-2xl text-[var(--text-faint)]">—</span>
-              <span className={!aWon ? "text-victory" : "text-[var(--text-muted)]"}>
+              <span
+                className={!aWon ? "text-victory" : "text-[var(--text-muted)]"}
+              >
                 {toPersianDigits(match.towersB!)}
               </span>
             </span>
@@ -140,8 +159,8 @@ export function ScoreShowcase({ match }: { match: EngineMatch }) {
         <div className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[var(--table-header)] px-5 py-2.5">
           <Sparkles className="size-4 text-gold" aria-hidden />
           <span className="text-sm font-extrabold">
-            برنده: <span className="text-gradient-gold">{winner.name}</span> — امتیاز کسب‌شده:{" "}
-            <span className="num">۲</span>
+            برنده: <span className="text-gradient-gold">{winner.name}</span> —
+            امتیاز کسب‌شده: <span className="num">۲</span>
           </span>
         </div>
       </div>
@@ -151,9 +170,9 @@ export function ScoreShowcase({ match }: { match: EngineMatch }) {
 
 function BigPlayer({ player, won }: { player: PlayerSeed; won: boolean }) {
   return (
-    <div className="flex w-24 flex-col items-center gap-2 sm:w-32">
+    <div className="flex min-w-0 flex-col items-center gap-2">
       <span className={cn(!won && "opacity-60 grayscale-[0.35]")}>
-        <PlayerAvatar player={player} size={72} />
+        <PlayerAvatar player={player} size={56} />
       </span>
       <p className="text-center text-sm font-extrabold">{player.name}</p>
       {won ? (
@@ -170,7 +189,7 @@ function BigPlayer({ player, won }: { player: PlayerSeed; won: boolean }) {
 }
 
 export function MatchTypeLabel({ type }: { type: EngineMatch["matchType"] }) {
-  return <span>{MATCH_TYPE_LABELS[type]}</span>;
+  return <span>{matchTypeLabel(type)}</span>;
 }
 
 export function EncounterScoreBadge({
@@ -188,7 +207,11 @@ export function EncounterScoreBadge({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Badge variant={winsA > winsB ? "victory" : winsA === winsB ? "default" : "defeat"}>
+      <Badge
+        variant={
+          winsA > winsB ? "victory" : winsA === winsB ? "default" : "defeat"
+        }
+      >
         <Swords className="size-3" aria-hidden />
         <span className="num">
           {toPersianDigits(winsA)} — {toPersianDigits(winsB)}

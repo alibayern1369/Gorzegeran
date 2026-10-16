@@ -1,3 +1,6 @@
+import { getAllPlayers } from "@/lib/queries";
+import { visualPlayer } from "@/lib/visual-players";
+import { matchTypeLabel, matchTypeLabelEn } from "@/lib/engine/types";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,19 +13,13 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  MatchStatusBadge,
-  MatchTypeBadge,
-} from "@/components/league/badges";
+import { MatchStatusBadge, MatchTypeBadge } from "@/components/league/badges";
 import { ScoreShowcase, MatchCard } from "@/components/league/score-display";
 import { Countdown } from "@/components/league/countdown";
 import { PlayerAvatar } from "@/components/league/player-avatar";
 import { getMatchById, getAllMatches, toEngineMatch } from "@/lib/queries";
-import { PLAYER_BY_ID, type PlayerSeed } from "@/lib/constants";
-import {
-  formatJalaliDateTime,
-  toPersianDigits,
-} from "@/lib/jalali";
+import { type PlayerSeed } from "@/lib/constants";
+import { formatJalaliDateTime, toPersianDigits } from "@/lib/jalali";
 import { MATCH_TYPE_LABELS, MATCH_TYPE_LABELS_EN } from "@/lib/engine/types";
 
 export const dynamic = "force-dynamic";
@@ -35,10 +32,13 @@ export async function generateMetadata({
   const { id } = await params;
   const match = await getMatchById(Number(id));
   if (!match) return { title: "مسابقه یافت نشد" };
+  const PLAYER_BY_ID = new Map(
+    (await getAllPlayers()).map((p) => [p.id, visualPlayer(p)]),
+  );
   const a = PLAYER_BY_ID.get(match.playerAId) as PlayerSeed;
   const b = PLAYER_BY_ID.get(match.playerBId) as PlayerSeed;
   return {
-    title: `${a.name} در برابر ${b.name} — ${MATCH_TYPE_LABELS[match.matchType as keyof typeof MATCH_TYPE_LABELS]}`,
+    title: `${a.name} در برابر ${b.name} — ${matchTypeLabel(match.matchType as keyof typeof MATCH_TYPE_LABELS)}`,
     description: "جزئیات کامل مسابقه لیگ گرز گران",
   };
 }
@@ -55,6 +55,9 @@ export default async function MatchDetailPage({
   const match = await getMatchById(numericId);
   if (!match) notFound();
 
+  const PLAYER_BY_ID = new Map(
+    (await getAllPlayers()).map((p) => [p.id, visualPlayer(p)]),
+  );
   const a = PLAYER_BY_ID.get(match.playerAId) as PlayerSeed;
   const b = PLAYER_BY_ID.get(match.playerBId) as PlayerSeed;
   const completed = match.status === "completed" && match.towersA !== null;
@@ -64,7 +67,10 @@ export default async function MatchDetailPage({
   // مسابقات مرتبط در همان رویارویی
   const all = (await getAllMatches()).map(toEngineMatch);
   const siblings = all
-    .filter((m) => m.encounterId === engineMatch.encounterId && m.id !== engineMatch.id)
+    .filter(
+      (m) =>
+        m.encounterId === engineMatch.encounterId && m.id !== engineMatch.id,
+    )
     .sort((x, y) => x.slotIndex - y.slotIndex);
 
   return (
@@ -97,7 +103,9 @@ export default async function MatchDetailPage({
             <div className="mt-5 flex items-center justify-center gap-5 sm:gap-10">
               <PreMatchPlayer player={a} />
               <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl font-black text-[var(--text-faint)]">VS</span>
+                <span className="text-2xl font-black text-[var(--text-faint)]">
+                  VS
+                </span>
                 <MatchTypeBadge type={engineMatch.matchType} />
               </div>
               <PreMatchPlayer player={b} />
@@ -109,8 +117,8 @@ export default async function MatchDetailPage({
               <Countdown targetIso={match.scheduledAt.toISOString()} />
             </div>
             <p className="mx-auto mt-4 max-w-md text-xs leading-6 text-[var(--text-faint)]">
-              پس از پایان مسابقه، نتیجهٔ رسمی تنها توسط مدیر لیگ ثبت می‌شود. شمارش معکوس
-              صفرشده به‌تنهایی مسابقه را «برگزارشده» نمی‌کند.
+              پس از پایان مسابقه، نتیجهٔ رسمی تنها توسط مدیر لیگ ثبت می‌شود.
+              شمارش معکوس صفرشده به‌تنهایی مسابقه را «برگزارشده» نمی‌کند.
             </p>
           </div>
         </Card>
@@ -120,13 +128,19 @@ export default async function MatchDetailPage({
       <Card className="mt-5">
         <h2 className="mb-4 text-lg font-extrabold">اطلاعات مسابقه</h2>
         <dl className="grid grid-cols-2 gap-4 text-sm">
-          <InfoItem label="نوع مسابقه" value={MATCH_TYPE_LABELS[engineMatch.matchType]} />
+          <InfoItem
+            label="نوع مسابقه"
+            value={matchTypeLabel(engineMatch.matchType)}
+          />
           <InfoItem
             label="شناسهٔ انگلیسی نوع"
-            value={MATCH_TYPE_LABELS_EN[engineMatch.matchType]}
+            value={matchTypeLabelEn(engineMatch.matchType)}
             mono
           />
-          <InfoItem label="زمان برگزاری" value={formatJalaliDateTime(match.scheduledAt)} />
+          <InfoItem
+            label="زمان برگزاری"
+            value={formatJalaliDateTime(match.scheduledAt)}
+          />
           <InfoItem
             label="شب مسابقات"
             value={`شب ${toPersianDigits(match.nightIndex + 1)}`}
@@ -186,7 +200,9 @@ function PreMatchPlayer({ player }: { player: PlayerSeed }) {
     >
       <PlayerAvatar player={player} size={80} />
       <p className="text-center text-base font-extrabold">{player.name}</p>
-      <p className="text-center text-xs text-[var(--text-faint)]">{player.title}</p>
+      <p className="text-center text-xs text-[var(--text-faint)]">
+        {player.title}
+      </p>
     </Link>
   );
 }
@@ -205,7 +221,9 @@ function InfoItem({
   return (
     <div className="clay-sm rounded-2xl p-3">
       <dt className="text-xs text-[var(--text-faint)]">{label}</dt>
-      <dd className={`mt-1 font-bold ${mono ? "num" : ""} ${valueClassName}`}>{value}</dd>
+      <dd className={`mt-1 font-bold ${mono ? "num" : ""} ${valueClassName}`}>
+        {value}
+      </dd>
     </div>
   );
 }
