@@ -1,0 +1,381 @@
+@import "tailwindcss";
+
+/* ─────────────── توکن‌های طراحی گرز گران ─────────────── */
+
+@theme {
+  --font-sans: var(--font-vazirmatn), "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  /* پالت سلطنتی */
+  --color-royal: #2563eb;
+  --color-royal-dark: #1d4ed8;
+  --color-royal-light: #60a5fa;
+  --color-navy: #101b38;
+  --color-elixir: #8b5cf6;
+  --color-elixir-dark: #7c3aed;
+  --color-elixir-light: #a78bfa;
+  --color-gold: #f5b942;
+  --color-gold-dark: #d97706;
+  --color-gold-light: #fcd34d;
+  --color-victory: #22c55e;
+  --color-defeat: #ef4444;
+  --color-soft: #f1f5ff;
+  --color-night: #0b1020;
+
+  --radius-clay: 1.75rem;
+
+  --shadow-clay:
+    10px 10px 24px rgba(16, 27, 56, 0.18), -8px -8px 20px rgba(255, 255, 255, 0.07),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  --shadow-clay-sm:
+    5px 5px 12px rgba(16, 27, 56, 0.16), -4px -4px 10px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-clay-pressed:
+    inset 4px 4px 10px rgba(16, 27, 56, 0.22), inset -3px -3px 8px rgba(255, 255, 255, 0.05);
+  --shadow-gold:
+    0 10px 30px rgba(245, 185, 66, 0.35), 0 0 0 1px rgba(245, 185, 66, 0.25);
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-pulse-soft: pulse-soft 2.6s ease-in-out infinite;
+  --animate-shine: shine 2.8s linear infinite;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-slide-up: slide-up 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-12px) rotate(2deg);
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.03);
+    }
+  }
+  @keyframes shine {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(0.92);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes slide-up {
+    0% {
+      transform: translateY(14px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* ─────────────── تم‌ها ─────────────── */
+
+:root,
+.dark {
+  color-scheme: dark;
+  --bg: #0b1020;
+  --bg-gradient: radial-gradient(1200px 600px at 85% -10%, rgba(139, 92, 246, 0.16), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(37, 99, 235, 0.18), transparent 55%),
+    linear-gradient(180deg, #0b1020 0%, #101b38 100%);
+  --surface: #141f3f;
+  --surface-2: #1a2750;
+  --surface-3: #213066;
+  --text: #f4f7ff;
+  --text-muted: #9aabc9;
+  --text-faint: #6b7c9e;
+  --border: rgba(148, 170, 220, 0.14);
+  --border-strong: rgba(148, 170, 220, 0.26);
+  --clay-light: rgba(255, 255, 255, 0.08);
+  --clay-dark: rgba(3, 8, 24, 0.55);
+  --overlay: rgba(5, 10, 25, 0.72);
+  --table-header: rgba(139, 92, 246, 0.12);
+  --row-hover: rgba(96, 165, 250, 0.1);
+}
+
+.light {
+  color-scheme: light;
+  --bg: #f1f5ff;
+  --bg-gradient: radial-gradient(1200px 600px at 85% -10%, rgba(139, 92, 246, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(37, 99, 235, 0.1), transparent 55%),
+    linear-gradient(180deg, #f1f5ff 0%, #e4ecff 100%);
+  --surface: #ffffff;
+  --surface-2: #eef3ff;
+  --surface-3: #e2eaff;
+  --text: #12203f;
+  --text-muted: #4b5c80;
+  --text-faint: #8091b3;
+  --border: rgba(28, 48, 100, 0.12);
+  --border-strong: rgba(28, 48, 100, 0.22);
+  --clay-light: rgba(255, 255, 255, 0.95);
+  --clay-dark: rgba(30, 50, 100, 0.16);
+  --overlay: rgba(20, 32, 64, 0.42);
+  --table-header: rgba(37, 99, 235, 0.08);
+  --row-hover: rgba(37, 99, 235, 0.07);
+}
+
+/* ─────────────── پایه ─────────────── */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+/* اعداد فارسی داخل جداول و آمار */
+.num {
+  font-feature-settings: "ss01";
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+/* ─────────────── کلی‌مورفیسم ─────────────── */
+
+.clay {
+  background: var(--surface);
+  border-radius: var(--radius-clay);
+  box-shadow: var(--shadow-clay);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.clay-sm {
+  background: var(--surface);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-clay-sm);
+  border: 1px solid var(--border);
+}
+
+.clay-pressed {
+  box-shadow: var(--shadow-clay-pressed);
+  background: var(--surface-2);
+}
+
+.clay-btn {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-radius: 1.15rem;
+  box-shadow: var(--shadow-clay-sm);
+  border: 1px solid var(--border);
+  transition:
+    transform 0.16s cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 0.16s ease,
+    filter 0.16s ease;
+}
+.clay-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+.clay-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-clay-pressed);
+}
+
+.clay-float {
+  animation: var(--animate-float);
+}
+
+/* سطح درخشان طلایی برای عناصر قهرمانی */
+.gold-sheen {
+  background-image: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 235, 170, 0.45) 40%,
+    rgba(255, 235, 170, 0.12) 55%,
+    transparent 75%
+  );
+  background-size: 220% 100%;
+  animation: var(--animate-shine);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #fcd34d 0%, #f5b942 45%, #e0872b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-royal {
+  background: linear-gradient(135deg, #93c5fd 0%, #2563eb 55%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ─────────────── جداول خوانا ─────────────── */
+
+.table-clay {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+.table-clay th {
+  background: var(--table-header);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.75rem 0.9rem;
+  white-space: nowrap;
+}
+.table-clay th:first-child {
+  border-start-start-radius: 1.1rem;
+  border-end-start-radius: 1.1rem;
+}
+.table-clay th:last-child {
+  border-start-end-radius: 1.1rem;
+  border-end-end-radius: 1.1rem;
+}
+.table-clay td {
+  background: var(--surface);
+  padding: 0.85rem 0.9rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.table-clay td:first-child {
+  border-inline-start: 1px solid var(--border);
+  border-start-start-radius: 1.1rem;
+  border-end-start-radius: 1.1rem;
+}
+.table-clay td:last-child {
+  border-inline-end: 1px solid var(--border);
+  border-start-end-radius: 1.1rem;
+  border-end-end-radius: 1.1rem;
+}
+.table-clay tbody tr {
+  transition: transform 0.15s ease;
+}
+.table-clay tbody tr:hover td {
+  background: var(--row-hover);
+}
+
+/* ─────────────── اسکرول‌بار ─────────────── */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+
+/* ─────────────── فوکوس دسترس‌پذیر ─────────────── */
+
+:focus-visible {
+  outline: 3px solid var(--color-elixir-light);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* ─────────────── کاهش حرکت ─────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─────────────── ناوبری موبایل ─────────────── */
+
+.bottom-nav {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--border);
+}
+
+/* اسکرول افقی کنترل‌شده برای جداول در موبایل */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* اسکلت بارگذاری */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton 1.4s ease infinite;
+  border-radius: 0.9rem;
+}
+@keyframes skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* نوار پیشرفت */
+.progress-track {
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: var(--shadow-clay-pressed);
+}
+.progress-fill {
+  background: linear-gradient(90deg, #2563eb, #8b5cf6, #f5b942);
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* چارت‌ها */
+.recharts-cartesian-axis-tick text {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+.recharts-default-legend {
+  direction: rtl;
+}
